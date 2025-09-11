@@ -217,12 +217,14 @@ local ESPEnabled = false
 local AimbotEnabled = false
 local AutoShootEnabled = false
 local PingPredictionEnabled = false
+local AntiHackerEnabled = false
 local PingMS = 100
 local FOVRadius = 100
 local targetPlayer = nil
 local espConnections = {}
 local fovCircle = nil
 local aimButton = nil
+local antiHackerPlatform = nil
 
 local LocalPlayer = Players.LocalPlayer
 local hitboxEnabled = false
@@ -250,6 +252,7 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
 local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
+local AntiHackerTab = Window:CreateTab("Anti Hacker", 4483362458)
 
 -- team and anti-enemys
 local function getNearbyPlayers(maxDistance)
@@ -485,6 +488,155 @@ local function isPlayerInFOV(player)
     
     return distance <= FOVRadius
 end
+
+-- Função para detectar hacker voando
+local function isPlayerFlying(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
+        return false
+    end
+    
+    local humanoidRootPart = player.Character.HumanoidRootPart
+    local humanoid = player.Character.Humanoid
+    local velocity = humanoidRootPart.AssemblyLinearVelocity
+    
+    -- Verifica se está no ar e parado (voando)
+    if humanoid.FloorMaterial == Enum.Material.Air and velocity.Magnitude < 2 and humanoidRootPart.Position.Y > 10 then
+        return true
+    end
+    
+    return false
+end
+
+-- Função para detectar hacker com velocidade alta
+local function isPlayerSpeedHacking(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    
+    local velocity = player.Character.HumanoidRootPart.AssemblyLinearVelocity
+    local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+    
+    -- Velocidade normal: 1-16, hacker: >17
+    return horizontalSpeed > 17
+end
+
+-- Função para criar plataforma anti-hacker
+local function createAntiHackerPlatform()
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    if antiHackerPlatform then
+        antiHackerPlatform:Destroy()
+    end
+    
+    local platform = Instance.new("Part")
+    platform.Name = "AntiHackerPlatform"
+    platform.Size = Vector3.new(10, 1, 10)
+    platform.Material = Enum.Material.Neon
+    platform.BrickColor = BrickColor.new("Bright red")
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Position = LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
+    platform.Parent = Workspace
+    
+    antiHackerPlatform = platform
+    
+    return platform
+end
+
+-- Função para puxar hacker
+local function pullHacker(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    local hackerRoot = player.Character.HumanoidRootPart
+    local myRoot = LocalPlayer.Character.HumanoidRootPart
+    
+    -- Criar BodyPosition para puxar
+    local bodyPosition = Instance.new("BodyPosition")
+    bodyPosition.MaxForce = Vector3.new(4000, 4000, 4000)
+    bodyPosition.Position = myRoot.Position + myRoot.CFrame.LookVector * 5
+    bodyPosition.Parent = hackerRoot
+    
+    -- Remover após 2 segundos
+    game:GetService("Debris"):AddItem(bodyPosition, 2)
+end
+
+-- Função para equipar 3º tool e atacar
+local function equipThirdToolAndAttack(targetPlayer)
+    if not LocalPlayer.Backpack then return end
+    
+    local tools = {}
+    for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+        if tool:IsA("Tool") then
+            table.insert(tools, tool)
+        end
+    end
+    
+    -- Equipar o 3º tool se existir
+    if tools[3] then
+        local thirdTool = tools[3]
+        LocalPlayer.Character.Humanoid:EquipTool(thirdTool)
+        
+        wait(0.1) -- Aguarda equipar
+        
+        -- Simular clique com VirtualInputManager
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+            local screenPos, onScreen = Camera:WorldToViewportPoint(targetPosition)
+            
+            if onScreen then
+                VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 1)
+                wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 1)
+            end
+        end
+    end
+end
+
+-- Função para auto atirar em hacker voando
+local function autoShootFlyingHacker(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return
+    end
+    
+    local targetPosition = getPredictedPosition(player)
+    if not targetPosition then return end
+    
+    local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
+        local args = {
+            [1] = 1,
+            [2] = targetPosition
+        }
+        currentTool.GunServer.GunStart:FireServer(unpack(args))
+    end
+end
+local function getPredictedPosition(player)
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
+        return nil
+    end
+    
+    local humanoidRootPart = player.Character.HumanoidRootPart
+    local humanoid = player.Character.Humanoid
+    
+    if not PingPredictionEnabled then
+        return humanoidRootPart.Position
+    end
+    
+    -- Calcular velocidade atual do player
+    local velocity = humanoidRootPart.AssemblyLinearVelocity
+    
+    -- Se o player não está se movendo, retorna posição atual
+    if velocity.Magnitude < 1 then
+        return humanoidRootPart.Position
+    end
 
 -- Função para calcular posição com ping prediction
 local function getPredictedPosition(player)
@@ -882,6 +1034,60 @@ local AutoShootToggle = MainTab:CreateToggle({
         AutoShootEnabled = Value
     end,
 })
+
+-- Toggle Anti Hacker System
+local AntiHackerToggle = AntiHackerTab:CreateToggle({
+    Name = "Anti Hacker System",
+    CurrentValue = false,
+    Flag = "AntiHacker",
+    Callback = function(Value)
+        AntiHackerEnabled = Value
+        
+        if AntiHackerEnabled then
+            -- Loop principal anti-hacker
+            espConnections.AntiHackerLoop = RunService.Heartbeat:Connect(function()
+                if AntiHackerEnabled then
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= LocalPlayer and player.Character then
+                            -- Detectar hacker voando parado
+                            if isPlayerFlying(player) then
+                                autoShootFlyingHacker(player)
+                                equipThirdToolAndAttack(player)
+                            end
+                            
+                            -- Detectar hacker com velocidade alta
+                            if isPlayerSpeedHacking(player) then
+                                -- Criar plataforma de proteção
+                                createAntiHackerPlatform()
+                                
+                                -- Puxar hacker
+                                pullHacker(player)
+                                
+                                -- Equipar 3º tool e atacar
+                                equipThirdToolAndAttack(player)
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            -- Desconectar loop anti-hacker
+            if espConnections.AntiHackerLoop then
+                espConnections.AntiHackerLoop:Disconnect()
+                espConnections.AntiHackerLoop = nil
+            end
+            
+            -- Remover plataforma
+            if antiHackerPlatform then
+                antiHackerPlatform:Destroy()
+                antiHackerPlatform = nil
+            end
+        end
+    end,
+})
+
+-- Informações sobre o sistema
+AntiHackerTab:CreateParagraph({Name = "Sistema Anti Hacker", Content = "• Auto atira em hackers voando parados\n• Cria plataforma e puxa hackers rápidos\n• Equipa 3º tool automaticamente\n• Velocidade normal: 1-16 studs/s\n• Hacker detectado: >17 studs/s"})
 
 -- Slider FOV
 local FOVSlider = MainTab:CreateSlider({
