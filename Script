@@ -207,6 +207,12 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- Variáveis
+local detectorEnabled = false
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local connection
+
 local ESPEnabled = false
 local AimbotEnabled = false
 local AutoShootEnabled = false
@@ -243,6 +249,101 @@ local Window = Rayfield:CreateWindow({
 
 local MainTab = Window:CreateTab("Main", 4483362458)
 local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
+local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
+
+-- team and anti-enemys
+local function getNearbyPlayers(maxDistance)
+    local nearbyPlayers = {}
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return nearbyPlayers
+    end
+    
+    local localPosition = LocalPlayer.Character.HumanoidRootPart.Position
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (player.Character.HumanoidRootPart.Position - localPosition).Magnitude
+            if distance <= maxDistance then
+                table.insert(nearbyPlayers, {player = player, distance = distance})
+            end
+        end
+    end
+    
+    return nearbyPlayers
+end
+
+-- Function to teleport backwards
+local function teleportBackwards()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local currentPosition = LocalPlayer.Character.HumanoidRootPart.Position
+        local currentCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+        
+        -- Calculate position 1 stud backwards based on looking direction
+        local backwardDirection = -currentCFrame.LookVector
+        local newPosition = currentPosition + (backwardDirection * 1)
+        
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition, newPosition + currentCFrame.LookVector)
+    end
+end
+
+-- Function to clear all teams
+local function clearTeams()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Team then
+            player.Team = nil
+        end
+    end
+    
+    Rayfield:Notify({
+        Title = "Teams Cleared",
+        Content = "All player teams have been cleared!",
+        Duration = 3,
+        Image = 4483362458,
+    })
+end
+
+-- Main detector function
+local function runDetector()
+    if not detectorEnabled then return end
+    
+    -- Detector 1: Distance 17.5 - Teleports backward when detecting any player
+    local nearbyPlayers17_5 = getNearbyPlayers(17.5)
+    if #nearbyPlayers17_5 > 0 then
+        -- Check if there are enemy players nearby (distance 10)
+        local enemyNearby = false
+        local nearbyPlayers10 = getNearbyPlayers(10)
+        
+        for _, playerData in pairs(nearbyPlayers10) do
+            local player = playerData.player
+            -- If player is not on same team (or no team system)
+            if not player.Team or not LocalPlayer.Team or player.Team ~= LocalPlayer.Team then
+                enemyNearby = true
+                break
+            end
+        end
+        
+        -- Only teleport if no enemies very close (distance 10)
+        if not enemyNearby then
+            teleportBackwards()
+        end
+    end
+    
+    -- Detector 2: Distance 10 - Don't teleport if player is on same team
+    local nearbyPlayers10 = getNearbyPlayers(10)
+    for _, playerData in pairs(nearbyPlayers10) do
+        local player = playerData.player
+        
+        -- If player is on same team, do nothing (don't teleport)
+        if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then
+            -- Same team player detected, don't teleport
+            continue
+        else
+            -- Enemy player nearby (10 studs), teleport backwards
+            teleportBackwards()
+            break
+        end
+    end
+end
 
 -- Functions
 local function createHitbox(player)
@@ -886,6 +987,185 @@ for _, player in pairs(Players:GetPlayers()) do
         end
     end
 end
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Player Detector",
+   LoadingTitle = "Loading Player Detector",
+   LoadingSubtitle = "Detection System",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "PlayerDetectorConfig"
+   },
+   Discord = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
+
+local Tab = Window:CreateTab("Detector", 4483362458)
+
+-- Control variables
+local detectorEnabled = false
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local connection
+
+-- Function to get nearby players
+local function getNearbyPlayers(maxDistance)
+    local nearbyPlayers = {}
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        return nearbyPlayers
+    end
+    
+    local localPosition = LocalPlayer.Character.HumanoidRootPart.Position
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local distance = (player.Character.HumanoidRootPart.Position - localPosition).Magnitude
+            if distance <= maxDistance then
+                table.insert(nearbyPlayers, {player = player, distance = distance})
+            end
+        end
+    end
+    
+    return nearbyPlayers
+end
+
+-- Function to teleport backwards
+local function teleportBackwards()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local currentPosition = LocalPlayer.Character.HumanoidRootPart.Position
+        local currentCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+        
+        -- Calculate position 1 stud backwards based on looking direction
+        local backwardDirection = -currentCFrame.LookVector
+        local newPosition = currentPosition + (backwardDirection * 1)
+        
+        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition, newPosition + currentCFrame.LookVector)
+    end
+end
+
+-- Function to clear all teams
+local function clearTeams()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.Team then
+            player.Team = nil
+        end
+    end
+    
+    Rayfield:Notify({
+        Title = "Teams Cleared",
+        Content = "All player teams have been cleared!",
+        Duration = 3,
+        Image = 4483362458,
+    })
+end
+
+-- Main detector function
+local function runDetector()
+    if not detectorEnabled then return end
+    
+    -- Detector 1: Distance 17.5 - Teleports backward when detecting any player
+    local nearbyPlayers17_5 = getNearbyPlayers(17.5)
+    if #nearbyPlayers17_5 > 0 then
+        -- Check if there are enemy players nearby (distance 10)
+        local enemyNearby = false
+        local nearbyPlayers10 = getNearbyPlayers(10)
+        
+        for _, playerData in pairs(nearbyPlayers10) do
+            local player = playerData.player
+            -- If player is not on same team (or no team system)
+            if not player.Team or not LocalPlayer.Team or player.Team ~= LocalPlayer.Team then
+                enemyNearby = true
+                break
+            end
+        end
+        
+        -- Only teleport if no enemies very close (distance 10)
+        if not enemyNearby then
+            teleportBackwards()
+        end
+    end
+    
+    -- Detector 2: Distance 10 - Don't teleport if player is on same team
+    local nearbyPlayers10 = getNearbyPlayers(10)
+    for _, playerData in pairs(nearbyPlayers10) do
+        local player = playerData.player
+        
+        -- If player is on same team, do nothing (don't teleport)
+        if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then
+            -- Same team player detected, don't teleport
+            continue
+        else
+            -- Enemy player nearby (10 studs), teleport backwards
+            teleportBackwards()
+            break
+        end
+    end
+end
+
+-- Toggle to enable/disable detector
+local Toggle = TeamTab:CreateToggle({
+   Name = "Anti enemys + team check",
+   CurrentValue = false,
+   Flag = "DetectorToggle",
+   Callback = function(Value)
+        detectorEnabled = Value
+        
+        if detectorEnabled then
+            -- Connect detector to RunService
+            connection = RunService.Heartbeat:Connect(runDetector)
+            Rayfield:Notify({
+                Title = "Detector Enabled",
+                Content = "Player detection system active!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        else
+            -- Disconnect detector
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+            Rayfield:Notify({
+                Title = "Detector Disabled",
+                Content = "Player detection system disabled!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end
+   end,
+})
+
+-- Button to clear teams
+local ClearTeamsButton = TeamTab:CreateButton({
+   Name = "Clear All Teams",
+   Callback = function()
+        clearTeams()
+   end,
+})
+
+-- Information section
+TeamTab:CreateSection("System Information")
+
+TabTeam:CreateParagraph({
+    Title = "How It Works",
+    Content = "Detector 1: Detects players at 17.5 studs and teleports you 1 stud backwards.\n\nDetector 2: Detects players at 10 studs - if teammate, doesn't teleport. If enemy, teleports backwards."
+})
+
+TabTeam:CreateParagraph({
+    Title = "Settings",
+    Content = "• Detector 1 Distance: 17.5 studs\n• Detector 2 Distance: 10 studs\n• Teleport Distance: 1 stud (backwards)"
+})
+
+TabTeam:CreateParagraph({
+    Title = "Clear Teams",
+    Content = "Use the 'Clear All Teams' button to remove team assignments from all players. This makes the detector treat everyone as enemies."
+})
 
 -- Limpar ao sair
 Players.PlayerRemoving:Connect(function(player)
