@@ -618,7 +618,6 @@ local function autoShootFlyingHacker(player)
         currentTool.GunServer.GunStart:FireServer(unpack(args))
     end
 end
-
 local function getPredictedPosition(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
         return nil
