@@ -263,8 +263,6 @@ local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
 local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
 local AntiHackerTab = Window:CreateTab("Anti-Hacker", 4483362458)
 
-local Section = AntiHackerTab:CreateSection("Settings")
-
 -- Function to create platform
 local function createPlatform()
     if platform then
