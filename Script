@@ -1132,65 +1132,6 @@ for _, player in pairs(Players:GetPlayers()) do
     end
 end
 
--- Toggle to enable/disable detector
-local Toggle = TeamTab:CreateToggle({
-   Name = "Anti enemys + team check",
-   CurrentValue = false,
-   Flag = "DetectorToggle",
-   Callback = function(Value)
-        detectorEnabled = Value
-        
-        if detectorEnabled then
-            -- Connect detector to RunService
-            connection = RunService.Heartbeat:Connect(runDetector)
-            Rayfield:Notify({
-                Title = "Detector Enabled",
-                Content = "Player detection system active!",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            -- Disconnect detector
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-            Rayfield:Notify({
-                Title = "Detector Disabled",
-                Content = "Player detection system disabled!",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        end
-   end,
-})
-
--- Button to clear teams
-local ClearTeamsButton = TeamTab:CreateButton({
-   Name = "Clear All Teams",
-   Callback = function()
-        clearTeams()
-   end,
-})
-
--- Information section
-TeamTab:CreateSection("System Information")
-
-TabTeam:CreateParagraph({
-    Title = "How It Works",
-    Content = "Detector 1: Detects players at 17.5 studs and teleports you 1 stud backwards.\n\nDetector 2: Detects players at 10 studs - if teammate, doesn't teleport. If enemy, teleports backwards."
-})
-
-TabTeam:CreateParagraph({
-    Title = "Settings",
-    Content = "• Detector 1 Distance: 17.5 studs\n• Detector 2 Distance: 10 studs\n• Teleport Distance: 1 stud (backwards)"
-})
-
-TabTeam:CreateParagraph({
-    Title = "Clear Teams",
-    Content = "Use the 'Clear All Teams' button to remove team assignments from all players. This makes the detector treat everyone as enemies."
-})
-
 -- Anti-Hacker Toggle
 local Toggle = AntiHackerTab:CreateToggle({
    Name = "Anti-Hacker System",
@@ -1279,6 +1220,67 @@ LocalPlayer.CharacterAdded:Connect(function(newCharacter)
 end)
 
 -- Loading notification
+
+-- Toggle to enable/disable detector
+local Toggle = TeamTab:CreateToggle({
+   Name = "Anti enemys + team check",
+   CurrentValue = false,
+   Flag = "DetectorToggle",
+   Callback = function(Value)
+        detectorEnabled = Value
+        
+        if detectorEnabled then
+            -- Connect detector to RunService
+            connection = RunService.Heartbeat:Connect(runDetector)
+            Rayfield:Notify({
+                Title = "Detector Enabled",
+                Content = "Player detection system active!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        else
+            -- Disconnect detector
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+            Rayfield:Notify({
+                Title = "Detector Disabled",
+                Content = "Player detection system disabled!",
+                Duration = 3,
+                Image = 4483362458,
+            })
+        end
+   end,
+})
+
+-- Button to clear teams
+local ClearTeamsButton = TeamTab:CreateButton({
+   Name = "Clear All Teams",
+   Callback = function()
+        clearTeams()
+   end,
+})
+
+-- Information section
+TeamTab:CreateSection("System Information")
+
+TabTeam:CreateParagraph({
+    Title = "How It Works",
+    Content = "Detector 1: Detects players at 17.5 studs and teleports you 1 stud backwards.\n\nDetector 2: Detects players at 10 studs - if teammate, doesn't teleport. If enemy, teleports backwards."
+})
+
+TabTeam:CreateParagraph({
+    Title = "Settings",
+    Content = "• Detector 1 Distance: 17.5 studs\n• Detector 2 Distance: 10 studs\n• Teleport Distance: 1 stud (backwards)"
+})
+
+TabTeam:CreateParagraph({
+    Title = "Clear Teams",
+    Content = "Use the 'Clear All Teams' button to remove team assignments from all players. This makes the detector treat everyone as enemies."
+})
+
+
 Rayfield:Notify({
    Title = "System Loaded",
    Content = "Anti-Hacker System is ready to use!",
