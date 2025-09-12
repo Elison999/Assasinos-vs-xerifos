@@ -204,6 +204,11 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 
 local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
 -- Variáveis
@@ -213,18 +218,22 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local connection
 
+local antiHackerEnabled = false
+local maxNormalSpeed = 17
+local detectedHackers = {}
+local platform = nil
+local connection = nil
+
 local ESPEnabled = false
 local AimbotEnabled = false
 local AutoShootEnabled = false
 local PingPredictionEnabled = false
-local AntiHackerEnabled = false
 local PingMS = 100
 local FOVRadius = 100
 local targetPlayer = nil
 local espConnections = {}
 local fovCircle = nil
 local aimButton = nil
-local antiHackerPlatform = nil
 
 local LocalPlayer = Players.LocalPlayer
 local hitboxEnabled = false
@@ -252,7 +261,141 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
 local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
-local AntiHackerTab = Window:CreateTab("Anti Hacker", 4483362458)
+local AntiHackerTab = Window:CreateTab("Anti-Hacker", 4483362458)
+
+local Section = AntiHackerTab:CreateSection("Settings")
+
+-- Function to create platform
+local function createPlatform()
+    if platform then
+        platform:Destroy()
+    end
+    
+    platform = Instance.new("Part")
+    platform.Name = "AntiHackerPlatform"
+    platform.Size = Vector3.new(10, 1, 10)
+    platform.Anchored = true
+    platform.CanCollide = true
+    platform.Material = Enum.Material.Neon
+    platform.BrickColor = BrickColor.new("Bright blue")
+    platform.Position = HumanoidRootPart.Position - Vector3.new(0, 3, 0)
+    platform.Parent = Workspace
+    
+    -- Teleport player to platform
+    HumanoidRootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 5, 0))
+end
+
+-- Function to equip 3rd tool
+local function equipThirdTool()
+    local backpack = LocalPlayer.Backpack
+    local tools = {}
+    
+    for _, item in pairs(backpack:GetChildren()) do
+        if item:IsA("Tool") then
+            table.insert(tools, item)
+        end
+    end
+    
+    if #tools >= 3 then
+        local thirdTool = tools[3]
+        Humanoid:EquipTool(thirdTool)
+        return thirdTool
+    end
+    
+    return nil
+end
+
+-- Function to shoot at hacker
+local function shootAtHacker(targetPosition)
+    local currentTool = Character:FindFirstChildOfClass("Tool")
+    
+    if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
+        local args = {
+            [1] = 1,
+            [2] = targetPosition
+        }
+        currentTool.GunServer.GunStart:FireServer(unpack(args))
+    end
+end
+
+-- Function to detect hackers
+local function detectHacker(player)
+    if player == LocalPlayer then return end
+    
+    local character = player.Character
+    if not character then return end
+    
+    local humanoid = character:FindFirstChild("Humanoid")
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not humanoidRootPart then return end
+    
+    local isFlying = false
+    local isSpeedHacking = false
+    
+    -- Detect flying (not touching ground and moving)
+    local raycast = Workspace:Raycast(humanoidRootPart.Position, Vector3.new(0, -10, 0))
+    if not raycast and humanoidRootPart.Velocity.Magnitude > 1 then
+        isFlying = true
+    end
+    
+    -- Detect abnormal speed
+    if humanoid.WalkSpeed > maxNormalSpeed or humanoidRootPart.Velocity.Magnitude > maxNormalSpeed then
+        isSpeedHacking = true
+    end
+    
+    return isFlying, isSpeedHacking
+end
+
+-- Main monitoring function
+local function monitorPlayers()
+    if not antiHackerEnabled then return end
+    
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local isFlying, isSpeedHacking = detectHacker(player)
+            
+            if isFlying or isSpeedHacking then
+                local character = player.Character
+                local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
+                
+                if humanoidRootPart then
+                    -- Mark as detected hacker
+                    detectedHackers[player.UserId] = true
+                    
+                    -- Create platform and equip tool
+                    createPlatform()
+                    local equippedTool = equipThirdTool()
+                    
+                    -- For flying hackers that are stationary, shoot directly
+                    if isFlying and humanoidRootPart.Velocity.Magnitude < 5 then
+                        shootAtHacker(humanoidRootPart.Position)
+                    end
+                    
+                    -- For speed hackers, pull and click
+                    if isSpeedHacking then
+                        -- Pull the hacker (teleport near platform)
+                        humanoidRootPart.CFrame = CFrame.new(platform.Position + Vector3.new(5, 3, 0))
+                        
+                        -- Auto-click near hacker
+                        wait(0.5) -- Small wait to stabilize
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                        wait(0.1)
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                    end
+                    
+                    -- For flying hackers in movement, also click
+                    if isFlying and humanoidRootPart.Velocity.Magnitude >= 5 then
+                        wait(0.3)
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                        wait(0.1)
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                    end
+                end
+            end
+        end
+    end
+end
 
 -- team and anti-enemys
 local function getNearbyPlayers(maxDistance)
@@ -488,155 +631,6 @@ local function isPlayerInFOV(player)
     
     return distance <= FOVRadius
 end
-
--- Função para detectar hacker voando
-local function isPlayerFlying(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
-        return false
-    end
-    
-    local humanoidRootPart = player.Character.HumanoidRootPart
-    local humanoid = player.Character.Humanoid
-    local velocity = humanoidRootPart.AssemblyLinearVelocity
-    
-    -- Verifica se está no ar e parado (voando)
-    if humanoid.FloorMaterial == Enum.Material.Air and velocity.Magnitude < 2 and humanoidRootPart.Position.Y > 10 then
-        return true
-    end
-    
-    return false
-end
-
--- Função para detectar hacker com velocidade alta
-local function isPlayerSpeedHacking(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return false
-    end
-    
-    local velocity = player.Character.HumanoidRootPart.AssemblyLinearVelocity
-    local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
-    
-    -- Velocidade normal: 1-16, hacker: >17
-    return horizontalSpeed > 17
-end
-
--- Função para criar plataforma anti-hacker
-local function createAntiHackerPlatform()
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
-    
-    if antiHackerPlatform then
-        antiHackerPlatform:Destroy()
-    end
-    
-    local platform = Instance.new("Part")
-    platform.Name = "AntiHackerPlatform"
-    platform.Size = Vector3.new(10, 1, 10)
-    platform.Material = Enum.Material.Neon
-    platform.BrickColor = BrickColor.new("Bright red")
-    platform.Anchored = true
-    platform.CanCollide = true
-    platform.Position = LocalPlayer.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
-    platform.Parent = Workspace
-    
-    antiHackerPlatform = platform
-    
-    return platform
-end
-
--- Função para puxar hacker
-local function pullHacker(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
-    
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
-    
-    local hackerRoot = player.Character.HumanoidRootPart
-    local myRoot = LocalPlayer.Character.HumanoidRootPart
-    
-    -- Criar BodyPosition para puxar
-    local bodyPosition = Instance.new("BodyPosition")
-    bodyPosition.MaxForce = Vector3.new(4000, 4000, 4000)
-    bodyPosition.Position = myRoot.Position + myRoot.CFrame.LookVector * 5
-    bodyPosition.Parent = hackerRoot
-    
-    -- Remover após 2 segundos
-    game:GetService("Debris"):AddItem(bodyPosition, 2)
-end
-
--- Função para equipar 3º tool e atacar
-local function equipThirdToolAndAttack(targetPlayer)
-    if not LocalPlayer.Backpack then return end
-    
-    local tools = {}
-    for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
-        if tool:IsA("Tool") then
-            table.insert(tools, tool)
-        end
-    end
-    
-    -- Equipar o 3º tool se existir
-    if tools[3] then
-        local thirdTool = tools[3]
-        LocalPlayer.Character.Humanoid:EquipTool(thirdTool)
-        
-        wait(0.1) -- Aguarda equipar
-        
-        -- Simular clique com VirtualInputManager
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
-            local screenPos, onScreen = Camera:WorldToViewportPoint(targetPosition)
-            
-            if onScreen then
-                VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, true, game, 1)
-                wait(0.05)
-                VirtualInputManager:SendMouseButtonEvent(screenPos.X, screenPos.Y, 0, false, game, 1)
-            end
-        end
-    end
-end
-
--- Função para auto atirar em hacker voando
-local function autoShootFlyingHacker(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return
-    end
-    
-    local targetPosition = getPredictedPosition(player)
-    if not targetPosition then return end
-    
-    local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-    if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
-        local args = {
-            [1] = 1,
-            [2] = targetPosition
-        }
-        currentTool.GunServer.GunStart:FireServer(unpack(args))
-    end
-end
-local function getPredictedPosition(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
-        return nil
-    end
-    
-    local humanoidRootPart = player.Character.HumanoidRootPart
-    local humanoid = player.Character.Humanoid
-    
-    if not PingPredictionEnabled then
-        return humanoidRootPart.Position
-    end
-    
-    -- Calcular velocidade atual do player
-    local velocity = humanoidRootPart.AssemblyLinearVelocity
-    
-    -- Se o player não está se movendo, retorna posição atual
-    if velocity.Magnitude < 1 then
-        return humanoidRootPart.Position
-    end
 
 -- Função para calcular posição com ping prediction
 local function getPredictedPosition(player)
@@ -1035,60 +1029,6 @@ local AutoShootToggle = MainTab:CreateToggle({
     end,
 })
 
--- Toggle Anti Hacker System
-local AntiHackerToggle = AntiHackerTab:CreateToggle({
-    Name = "Anti Hacker System",
-    CurrentValue = false,
-    Flag = "AntiHacker",
-    Callback = function(Value)
-        AntiHackerEnabled = Value
-        
-        if AntiHackerEnabled then
-            -- Loop principal anti-hacker
-            espConnections.AntiHackerLoop = RunService.Heartbeat:Connect(function()
-                if AntiHackerEnabled then
-                    for _, player in pairs(Players:GetPlayers()) do
-                        if player ~= LocalPlayer and player.Character then
-                            -- Detectar hacker voando parado
-                            if isPlayerFlying(player) then
-                                autoShootFlyingHacker(player)
-                                equipThirdToolAndAttack(player)
-                            end
-                            
-                            -- Detectar hacker com velocidade alta
-                            if isPlayerSpeedHacking(player) then
-                                -- Criar plataforma de proteção
-                                createAntiHackerPlatform()
-                                
-                                -- Puxar hacker
-                                pullHacker(player)
-                                
-                                -- Equipar 3º tool e atacar
-                                equipThirdToolAndAttack(player)
-                            end
-                        end
-                    end
-                end
-            end)
-        else
-            -- Desconectar loop anti-hacker
-            if espConnections.AntiHackerLoop then
-                espConnections.AntiHackerLoop:Disconnect()
-                espConnections.AntiHackerLoop = nil
-            end
-            
-            -- Remover plataforma
-            if antiHackerPlatform then
-                antiHackerPlatform:Destroy()
-                antiHackerPlatform = nil
-            end
-        end
-    end,
-})
-
--- Informações sobre o sistema
-AntiHackerTab:CreateParagraph({Name = "Sistema Anti Hacker", Content = "• Auto atira em hackers voando parados\n• Cria plataforma e puxa hackers rápidos\n• Equipa 3º tool automaticamente\n• Velocidade normal: 1-16 studs/s\n• Hacker detectado: >17 studs/s"})
-
 -- Slider FOV
 local FOVSlider = MainTab:CreateSlider({
     Name = "Fov Size",
@@ -1251,6 +1191,101 @@ TabTeam:CreateParagraph({
 TabTeam:CreateParagraph({
     Title = "Clear Teams",
     Content = "Use the 'Clear All Teams' button to remove team assignments from all players. This makes the detector treat everyone as enemies."
+})
+
+-- Anti-Hacker Toggle
+local Toggle = AntiHackerTab:CreateToggle({
+   Name = "Anti-Hacker System",
+   CurrentValue = false,
+   Flag = "AntiHackerToggle",
+   Callback = function(Value)
+       antiHackerEnabled = Value
+       
+       if Value then
+           -- Start monitoring
+           connection = RunService.Heartbeat:Connect(monitorPlayers)
+           Rayfield:Notify({
+               Title = "Anti-Hacker Active",
+               Content = "Detection system started!",
+               Duration = 3,
+               Image = 4483362458,
+           })
+       else
+           -- Stop monitoring
+           if connection then
+               connection:Disconnect()
+               connection = nil
+           end
+           
+           -- Clear platform
+           if platform then
+               platform:Destroy()
+               platform = nil
+           end
+           
+           -- Clear detected hackers list
+           detectedHackers = {}
+           
+           Rayfield:Notify({
+               Title = "Anti-Hacker Disabled",
+               Content = "Detection system stopped!",
+               Duration = 3,
+               Image = 4483362458,
+           })
+       end
+   end,
+})
+
+-- Slider to adjust maximum speed
+local SpeedSlider = AntiHackerTab:CreateSlider({
+   Name = "Maximum Allowed Speed",
+   Range = {10, 30},
+   Increment = 1,
+   Suffix = " studs/s",
+   CurrentValue = 17,
+   Flag = "MaxSpeedSlider",
+   Callback = function(Value)
+       maxNormalSpeed = Value
+       Rayfield:Notify({
+           Title = "Speed Updated",
+           Content = "New maximum speed: " .. Value,
+           Duration = 2,
+           Image = 4483362458,
+       })
+   end,
+})
+
+-- Button to clear detected hackers
+local ClearButton = AntiHackerTab:CreateButton({
+   Name = "Clear Hacker List",
+   Callback = function()
+       detectedHackers = {}
+       if platform then
+           platform:Destroy()
+           platform = nil
+       end
+       Rayfield:Notify({
+           Title = "List Cleared",
+           Content = "Detected hackers list has been cleared!",
+           Duration = 2,
+           Image = 4483362458,
+       })
+   end,
+})
+
+-- Update character references when respawning
+LocalPlayer.CharacterAdded:Connect(function(newCharacter)
+    Character = newCharacter
+    Humanoid = Character:WaitForChild("Humanoid")
+    HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+end)
+
+-- Loading notification
+Rayfield:Notify({
+   Title = "System Loaded",
+   Content = "Anti-Hacker System is ready to use!",
+   Duration = 5,
+   Image = 4483362458,
 })
 
 -- Limpar ao sair
