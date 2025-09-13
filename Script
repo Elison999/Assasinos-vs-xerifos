@@ -203,6 +203,8 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 
+local TweenService = game:GetService("TweenService")
+
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
@@ -242,6 +244,22 @@ local hitboxTransparency = 0.8
 local connections = {}
 local hitboxParts = {}
 
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local originalCFrame = Camera.CFrame
+local isSpectating = false
+local currentPlayerIndex = 1
+local spectatingConnection
+local playersToSpectate = {}
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- GUI Elements
+local playerNameGui
+local leftButton
+local rightButton
+local exitButton
+local playerCountLabel
+
 -- Criar GUI
 local Window = Rayfield:CreateWindow({
     Name = "Assasinos vs xerifos - Bridge Hub",
@@ -262,6 +280,337 @@ local MainTab = Window:CreateTab("Main", 4483362458)
 local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
 local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
 local AntiHackerTab = Window:CreateTab("Anti-Hacker", 4483362458)
+
+local function updatePlayersList()
+    playersToSpectate = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(playersToSpectate, player)
+        end
+    end
+end
+
+-- Function to create player name GUI (Mobile optimized)
+local function createPlayerNameGui()
+    if playerNameGui then
+        playerNameGui:Destroy()
+    end
+    
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "SpectatorGui"
+    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.ResetOnSpawn = false
+    screenGui.IgnoreGuiInset = true
+    
+    -- Main info frame (bigger for mobile)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 400, 0, 70)
+    frame.Position = UDim2.new(0.5, -200, 0, 30)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.2
+    frame.BorderSizePixel = 0
+    frame.Parent = screenGui
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = frame
+    
+    -- Player name label (bigger text for mobile)
+    local playerLabel = Instance.new("TextLabel")
+    playerLabel.Size = UDim2.new(1, 0, 0.7, 0)
+    playerLabel.Position = UDim2.new(0, 0, 0, 0)
+    playerLabel.BackgroundTransparency = 1
+    playerLabel.Text = "Spectating: Nobody"
+    playerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    playerLabel.TextScaled = true
+    playerLabel.Font = Enum.Font.GothamBold
+    playerLabel.Parent = frame
+    
+    -- Player count label
+    local countLabel = Instance.new("TextLabel")
+    countLabel.Size = UDim2.new(1, 0, 0.3, 0)
+    countLabel.Position = UDim2.new(0, 0, 0.7, 0)
+    countLabel.BackgroundTransparency = 1
+    countLabel.Text = "Players: 0/0"
+    countLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    countLabel.TextScaled = true
+    countLabel.Font = Enum.Font.Gotham
+    countLabel.Parent = frame
+    
+    playerNameGui = {
+        screenGui = screenGui,
+        label = playerLabel,
+        countLabel = countLabel,
+        frame = frame
+    }
+end
+
+-- Function to create mobile-optimized navigation buttons
+local function createNavigationButtons()
+    if not playerNameGui then return end
+    
+    -- Left button (bigger for mobile)
+    leftButton = Instance.new("TextButton")
+    leftButton.Size = UDim2.new(0, 80, 0, 80)
+    leftButton.Position = UDim2.new(0, 20, 0.5, -40)
+    leftButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    leftButton.BackgroundTransparency = 0.1
+    leftButton.BorderSizePixel = 0
+    leftButton.Text = "◀"
+    leftButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    leftButton.TextScaled = true
+    leftButton.Font = Enum.Font.GothamBold
+    leftButton.Parent = playerNameGui.screenGui
+    
+    local leftCorner = Instance.new("UICorner")
+    leftCorner.CornerRadius = UDim.new(0, 40)
+    leftCorner.Parent = leftButton
+    
+    -- Add glow effect
+    local leftStroke = Instance.new("UIStroke")
+    leftStroke.Color = Color3.fromRGB(100, 100, 100)
+    leftStroke.Thickness = 2
+    leftStroke.Transparency = 0.5
+    leftStroke.Parent = leftButton
+    
+    -- Right button (bigger for mobile)
+    rightButton = Instance.new("TextButton")
+    rightButton.Size = UDim2.new(0, 80, 0, 80)
+    rightButton.Position = UDim2.new(1, -100, 0.5, -40)
+    rightButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    rightButton.BackgroundTransparency = 0.1
+    rightButton.BorderSizePixel = 0
+    rightButton.Text = "▶"
+    rightButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    rightButton.TextScaled = true
+    rightButton.Font = Enum.Font.GothamBold
+    rightButton.Parent = playerNameGui.screenGui
+    
+    local rightCorner = Instance.new("UICorner")
+    rightCorner.CornerRadius = UDim.new(0, 40)
+    rightCorner.Parent = rightButton
+    
+    -- Add glow effect
+    local rightStroke = Instance.new("UIStroke")
+    rightStroke.Color = Color3.fromRGB(100, 100, 100)
+    rightStroke.Thickness = 2
+    rightStroke.Transparency = 0.5
+    rightStroke.Parent = rightButton
+    
+    -- Exit button (top right)
+    exitButton = Instance.new("TextButton")
+    exitButton.Size = UDim2.new(0, 70, 0, 70)
+    exitButton.Position = UDim2.new(1, -90, 0, 120)
+    exitButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+    exitButton.BackgroundTransparency = 0.1
+    exitButton.BorderSizePixel = 0
+    exitButton.Text = "✕"
+    exitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    exitButton.TextScaled = true
+    exitButton.Font = Enum.Font.GothamBold
+    exitButton.Parent = playerNameGui.screenGui
+    
+    local exitCorner = Instance.new("UICorner")
+    exitCorner.CornerRadius = UDim.new(0, 35)
+    exitCorner.Parent = exitButton
+    
+    -- Mobile touch effects
+    local function addTouchEffect(button, pressedColor)
+        local originalColor = button.BackgroundColor3
+        
+        button.MouseButton1Down:Connect(function()
+            button.BackgroundColor3 = pressedColor or Color3.fromRGB(80, 80, 80)
+            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size * 0.95})
+            tween:Play()
+        end)
+        
+        button.MouseButton1Up:Connect(function()
+            button.BackgroundColor3 = originalColor
+            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size / 0.95})
+            tween:Play()
+        end)
+        
+        button.MouseLeave:Connect(function()
+            button.BackgroundColor3 = originalColor
+            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size / 0.95})
+            tween:Play()
+        end)
+    end
+    
+    addTouchEffect(leftButton)
+    addTouchEffect(rightButton)
+    addTouchEffect(exitButton, Color3.fromRGB(255, 80, 80))
+end
+
+-- Function to spectate a player
+local function spectatePlayer(player)
+    if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+        return false
+    end
+    
+    local character = player.Character
+    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if humanoidRootPart then
+        Camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
+        Camera.CameraType = Enum.CameraType.Custom
+        playerNameGui.label.Text = "Spectating: " .. player.DisplayName
+        playerNameGui.countLabel.Text = "Player: " .. currentPlayerIndex .. "/" .. #playersToSpectate
+        return true
+    end
+    
+    return false
+end
+
+-- Function to stop spectating
+local function stopSpectating()
+    if spectatingConnection then
+        spectatingConnection:Disconnect()
+        spectatingConnection = nil
+    end
+    
+    Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+    Camera.CameraType = Enum.CameraType.Custom
+    
+    if playerNameGui then
+        playerNameGui.screenGui:Destroy()
+        playerNameGui = nil
+    end
+    
+    leftButton = nil
+    rightButton = nil
+    exitButton = nil
+    isSpectating = false
+end
+
+-- Function to go to next player
+local function nextPlayer()
+    if #playersToSpectate == 0 then
+        updatePlayersList()
+        if #playersToSpectate == 0 then return end
+    end
+    
+    currentPlayerIndex = currentPlayerIndex + 1
+    if currentPlayerIndex > #playersToSpectate then
+        currentPlayerIndex = 1
+    end
+    
+    local success = spectatePlayer(playersToSpectate[currentPlayerIndex])
+    if not success then
+        updatePlayersList()
+        if #playersToSpectate > 0 then
+            currentPlayerIndex = 1
+            spectatePlayer(playersToSpectate[currentPlayerIndex])
+        end
+    end
+end
+
+-- Function to go to previous player
+local function previousPlayer()
+    if #playersToSpectate == 0 then
+        updatePlayersList()
+        if #playersToSpectate == 0 then return end
+    end
+    
+    currentPlayerIndex = currentPlayerIndex - 1
+    if currentPlayerIndex < 1 then
+        currentPlayerIndex = #playersToSpectate
+    end
+    
+    local success = spectatePlayer(playersToSpectate[currentPlayerIndex])
+    if not success then
+        updatePlayersList()
+        if #playersToSpectate > 0 then
+            currentPlayerIndex = #playersToSpectate
+            spectatePlayer(playersToSpectate[currentPlayerIndex])
+        end
+    end
+end
+
+-- Function to start spectating
+local function startSpectating()
+    updatePlayersList()
+    
+    if #playersToSpectate == 0 then
+        Rayfield:Notify({
+            Title = "Camera Spectator",
+            Content = "No players available to spectate!",
+            Duration = 3,
+            Image = 4483362458
+        })
+        return
+    end
+    
+    createPlayerNameGui()
+    createNavigationButtons()
+    
+    -- Spectate first player
+    currentPlayerIndex = 1
+    spectatePlayer(playersToSpectate[currentPlayerIndex])
+    
+    -- Connect buttons
+    if leftButton and rightButton and exitButton then
+        leftButton.MouseButton1Click:Connect(previousPlayer)
+        rightButton.MouseButton1Click:Connect(nextPlayer)
+        exitButton.MouseButton1Click:Connect(function()
+            isSpectating = false
+        end)
+    end
+    
+    -- Mobile-friendly input handling
+    spectatingConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        
+        -- Support for external keyboards on mobile
+        if input.KeyCode == Enum.KeyCode.Left then
+            previousPlayer()
+        elseif input.KeyCode == Enum.KeyCode.Right then
+            nextPlayer()
+        elseif input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonX then
+            isSpectating = false
+        end
+        
+        -- Touch gestures (swipe left/right)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            local startPos = input.Position
+            local connection
+            connection = UserInputService.InputEnded:Connect(function(endInput)
+                if endInput.UserInputType == Enum.UserInputType.Touch then
+                    local endPos = endInput.Position
+                    local deltaX = endPos.X - startPos.X
+                    
+                    if math.abs(deltaX) > 100 then -- Minimum swipe distance
+                        if deltaX > 0 then
+                            nextPlayer() -- Swipe right = next player
+                        else
+                            previousPlayer() -- Swipe left = previous player
+                        end
+                    end
+                    connection:Disconnect()
+                end
+            end)
+        end
+    end)
+    
+    -- Update players list periodically
+    RunService.Heartbeat:Connect(function()
+        if isSpectating then
+            -- Check if current player is still valid
+            local currentPlayer = playersToSpectate[currentPlayerIndex]
+            if not currentPlayer or not currentPlayer.Parent or not currentPlayer.Character or not currentPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                updatePlayersList()
+                if #playersToSpectate > 0 then
+                    currentPlayerIndex = math.min(currentPlayerIndex, #playersToSpectate)
+                    spectatePlayer(playersToSpectate[currentPlayerIndex])
+                else
+                    isSpectating = false
+                end
+            end
+        end
+    end)
+    
+    isSpectating = true
+end
 
 -- Function to create platform
 local function createPlatform()
@@ -1252,6 +1601,19 @@ local Toggle = TeamTab:CreateToggle({
             })
         end
    end,
+})
+
+local SpectatorToggle = AntiHackerTab:CreateToggle({
+    Name = "spectator",
+    CurrentValue = false,
+    Flag = "MobileSpectatorToggle",
+    Callback = function(value)
+        if value then
+            startSpectating()
+        else
+            stopSpectating()
+        end
+    end,
 })
 
 -- Button to clear teams
