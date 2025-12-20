@@ -751,7 +751,7 @@ local PingToggle = MainTab:CreateToggle({
 
 local PingSlider = MainTab:CreateSlider({
     Name = "Ping (MS)",
-    Range = {50, 2000},
+    Range = {50, 200},
     Increment = 5,
     CurrentValue = 100,
     Flag = "PingMS",
