@@ -871,12 +871,43 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
             espConnections.AutoKnifeLoop = RunService.Heartbeat:Connect(function()
                 if autoKnifeEnabled then
                     local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                    if currentTool then
+                    if currentTool and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                         for _, player in pairs(Players:GetPlayers()) do
                             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                                 local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-                                local pullPos = myPos + Vector3.new(0, 0, 3)
+                                local lookVector = LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector
+                                local pullPos = myPos + (lookVector * 7) -- Distância de 7 studs
                                 pullPlayerToPosition(player, pullPos)
+                                
+                                -- Aumentar hitbox para 8
+                                if player.Character:FindFirstChild("HumanoidRootPart") then
+                                    local hrp = player.Character.HumanoidRootPart
+                                    if not hrp:FindFirstChild("AutoKnifeHitbox") then
+                                        local tempHitbox = Instance.new("Part")
+                                        tempHitbox.Name = "AutoKnifeHitbox"
+                                        tempHitbox.Anchored = true
+                                        tempHitbox.CanCollide = false
+                                        tempHitbox.Transparency = 0.7
+                                        tempHitbox.Size = Vector3.new(8, 8, 8)
+                                        tempHitbox.Shape = Enum.PartType.Ball
+                                        tempHitbox.BrickColor = BrickColor.new("Really red")
+                                        tempHitbox.Material = Enum.Material.ForceField
+                                        tempHitbox.CFrame = hrp.CFrame
+                                        tempHitbox.Parent = workspace
+                                        
+                                        -- Atualizar posição da hitbox
+                                        local hitboxConnection
+                                        hitboxConnection = RunService.Heartbeat:Connect(function()
+                                            if tempHitbox and tempHitbox.Parent and hrp and hrp.Parent then
+                                                tempHitbox.CFrame = hrp.CFrame
+                                            else
+                                                if tempHitbox then tempHitbox:Destroy() end
+                                                hitboxConnection:Disconnect()
+                                            end
+                                        end)
+                                    end
+                                end
+                                
                                 wait(0.05)
                             end
                         end
@@ -887,6 +918,13 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
             if espConnections.AutoKnifeLoop then
                 espConnections.AutoKnifeLoop:Disconnect()
                 espConnections.AutoKnifeLoop = nil
+            end
+            
+            -- Remover todas as hitboxes temporárias
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj.Name == "AutoKnifeHitbox" then
+                    obj:Destroy()
+                end
             end
         end
     end,
