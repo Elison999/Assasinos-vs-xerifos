@@ -1,4 +1,4 @@
--- Bridge Hub MM2 Space GUI Script
+-- Bridge Hub MM2 Space GUI Script - PARTE 1
 -- Criado para Roblox
 
 local Players = game:GetService("Players")
@@ -44,12 +44,10 @@ local function createStar(parent)
     star.BorderSizePixel = 0
     star.Parent = parent
     
-    -- Corner arredondado para parecer estrela
     local corner = Instance.new("UICorner")
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = star
     
-    -- Animação de brilho
     local twinkle = TweenService:Create(
         star,
         TweenInfo.new(math.random(1, 3), Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
@@ -65,7 +63,7 @@ for i = 1, 50 do
     createStar(mainFrame)
 end
 
--- Texto principal "Bridge Hub Mm2"
+-- Texto principal
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "TitleLabel"
 titleLabel.Size = UDim2.new(0, 600, 0, 100)
@@ -88,14 +86,14 @@ textGradient.Color = ColorSequence.new{
 }
 textGradient.Parent = titleLabel
 
--- Animação do gradiente do texto
+-- Animação do gradiente
 local gradientTween = TweenService:Create(
     textGradient,
     TweenInfo.new(2, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
     {Rotation = 360}
 )
 
--- Efeito de partículas espaciais
+-- Criar partículas
 local function createParticle()
     local particle = Instance.new("Frame")
     particle.Size = UDim2.new(0, math.random(1, 3), 0, math.random(1, 3))
@@ -112,7 +110,6 @@ local function createParticle()
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = particle
     
-    -- Animação da partícula subindo
     local moveTween = TweenService:Create(
         particle,
         TweenInfo.new(math.random(3, 6), Enum.EasingStyle.Linear),
@@ -125,23 +122,20 @@ local function createParticle()
     end)
 end
 
--- Gerar partículas continuamente
+-- Gerar partículas
 local particleConnection = RunService.Heartbeat:Connect(function()
     if math.random(1, 30) == 1 then
         createParticle()
     end
 end)
 
--- ANIMAÇÕES PRINCIPAIS
-
--- 1. Animação de entrada (opacity 1 até 100)
+-- Animações de entrada
 local fadeInTween = TweenService:Create(
     mainFrame,
     TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
     {BackgroundTransparency = 0}
 )
 
--- 2. Animação do texto aparecendo
 local textFadeIn = TweenService:Create(
     titleLabel,
     TweenInfo.new(1.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
@@ -151,23 +145,19 @@ local textFadeIn = TweenService:Create(
     }
 )
 
--- Configurar estado inicial
 titleLabel.TextTransparency = 1
 titleLabel.Position = UDim2.new(0.5, -300, 0.7, -50)
 
--- Executar animações de entrada
 fadeInTween:Play()
 textFadeIn:Play()
 gradientTween:Play()
 
--- 3. Animação de saída após 5 segundos
+-- Animação de saída após 5 segundos
 wait(5)
 
--- Parar a geração de partículas
 particleConnection:Disconnect()
 gradientTween:Pause()
 
--- Animação de fade out (opacity 100 até 1)
 local fadeOutTween = TweenService:Create(
     mainFrame,
     TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
@@ -183,18 +173,18 @@ local textFadeOut = TweenService:Create(
     }
 )
 
--- Executar animações de saída
 fadeOutTween:Play()
 textFadeOut:Play()
 
--- Limpar GUI após animação
 fadeOutTween.Completed:Connect(function()
     screenGui:Destroy()
 end)
 
-print("Bridge Hub MM2 - Space GUI carregada com sucesso!")
+print("Bridge Hub MM2 - Space GUI carregada - Parte 1 completa!")
 
--- Rayfield ESP & Aimbot Script para Mobile
+-- Bridge Hub MM2 Script - PARTE 2
+-- Variáveis e Funções Principais
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Players = game:GetService("Players")
@@ -202,26 +192,18 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
-
 local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-
-local LocalPlayer = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
--- Variáveis
+-- Variáveis Globais
 local detectorEnabled = false
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local connection
-
 local antiHackerEnabled = false
-local maxNormalSpeed = 17
+local maxNormalSpeed = 23
 local detectedHackers = {}
 local platform = nil
 local connection = nil
@@ -236,16 +218,20 @@ local targetPlayer = nil
 local espConnections = {}
 local fovCircle = nil
 local aimButton = nil
+local ShootType = "Normal"
 
-local LocalPlayer = Players.LocalPlayer
 local hitboxEnabled = false
 local hitboxSize = 5
 local hitboxTransparency = 0.8
 local connections = {}
 local hitboxParts = {}
 
-local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local speedEnabled = false
+local playerSpeed = 16
+
+local autoKnifeEnabled = false
+local autoKillEnabled = false
+
 local originalCFrame = Camera.CFrame
 local isSpectating = false
 local currentPlayerIndex = 1
@@ -253,14 +239,12 @@ local spectatingConnection
 local playersToSpectate = {}
 local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 
--- GUI Elements
 local playerNameGui
 local leftButton
 local rightButton
 local exitButton
-local playerCountLabel
 
--- Criar GUI
+-- Criar GUI Principal
 local Window = Rayfield:CreateWindow({
     Name = "Assasinos vs xerifos - Bridge Hub",
     LoadingTitle = "Loading",
@@ -277,568 +261,13 @@ local Window = Rayfield:CreateWindow({
 })
 
 local MainTab = Window:CreateTab("Main", 4483362458)
-local HitboxTab = Window:CreateTab("Hitbox", 4483362458) -- Título, Imagem
-local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458) -- Título, Imagem
+local HitboxTab = Window:CreateTab("Hitbox", 4483362458)
+local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458)
 local AntiHackerTab = Window:CreateTab("Anti-Hacker", 4483362458)
+local PlayerTab = Window:CreateTab("Player", 4483362458)
+local KnifeTab = Window:CreateTab("Knife", 4483362458)
 
-local function updatePlayersList()
-    playersToSpectate = {}
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            table.insert(playersToSpectate, player)
-        end
-    end
-end
-
--- Function to create player name GUI (Mobile optimized)
-local function createPlayerNameGui()
-    if playerNameGui then
-        playerNameGui:Destroy()
-    end
-    
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "SpectatorGui"
-    screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    screenGui.ResetOnSpawn = false
-    screenGui.IgnoreGuiInset = true
-    
-    -- Main info frame (bigger for mobile)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 400, 0, 70)
-    frame.Position = UDim2.new(0.5, -200, 0, 30)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.2
-    frame.BorderSizePixel = 0
-    frame.Parent = screenGui
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = frame
-    
-    -- Player name label (bigger text for mobile)
-    local playerLabel = Instance.new("TextLabel")
-    playerLabel.Size = UDim2.new(1, 0, 0.7, 0)
-    playerLabel.Position = UDim2.new(0, 0, 0, 0)
-    playerLabel.BackgroundTransparency = 1
-    playerLabel.Text = "Spectating: Nobody"
-    playerLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    playerLabel.TextScaled = true
-    playerLabel.Font = Enum.Font.GothamBold
-    playerLabel.Parent = frame
-    
-    -- Player count label
-    local countLabel = Instance.new("TextLabel")
-    countLabel.Size = UDim2.new(1, 0, 0.3, 0)
-    countLabel.Position = UDim2.new(0, 0, 0.7, 0)
-    countLabel.BackgroundTransparency = 1
-    countLabel.Text = "Players: 0/0"
-    countLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    countLabel.TextScaled = true
-    countLabel.Font = Enum.Font.Gotham
-    countLabel.Parent = frame
-    
-    playerNameGui = {
-        screenGui = screenGui,
-        label = playerLabel,
-        countLabel = countLabel,
-        frame = frame
-    }
-end
-
--- Function to create mobile-optimized navigation buttons
-local function createNavigationButtons()
-    if not playerNameGui then return end
-    
-    -- Left button (bigger for mobile)
-    leftButton = Instance.new("TextButton")
-    leftButton.Size = UDim2.new(0, 80, 0, 80)
-    leftButton.Position = UDim2.new(0, 20, 0.5, -40)
-    leftButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    leftButton.BackgroundTransparency = 0.1
-    leftButton.BorderSizePixel = 0
-    leftButton.Text = "◀"
-    leftButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    leftButton.TextScaled = true
-    leftButton.Font = Enum.Font.GothamBold
-    leftButton.Parent = playerNameGui.screenGui
-    
-    local leftCorner = Instance.new("UICorner")
-    leftCorner.CornerRadius = UDim.new(0, 40)
-    leftCorner.Parent = leftButton
-    
-    -- Add glow effect
-    local leftStroke = Instance.new("UIStroke")
-    leftStroke.Color = Color3.fromRGB(100, 100, 100)
-    leftStroke.Thickness = 2
-    leftStroke.Transparency = 0.5
-    leftStroke.Parent = leftButton
-    
-    -- Right button (bigger for mobile)
-    rightButton = Instance.new("TextButton")
-    rightButton.Size = UDim2.new(0, 80, 0, 80)
-    rightButton.Position = UDim2.new(1, -100, 0.5, -40)
-    rightButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    rightButton.BackgroundTransparency = 0.1
-    rightButton.BorderSizePixel = 0
-    rightButton.Text = "▶"
-    rightButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    rightButton.TextScaled = true
-    rightButton.Font = Enum.Font.GothamBold
-    rightButton.Parent = playerNameGui.screenGui
-    
-    local rightCorner = Instance.new("UICorner")
-    rightCorner.CornerRadius = UDim.new(0, 40)
-    rightCorner.Parent = rightButton
-    
-    -- Add glow effect
-    local rightStroke = Instance.new("UIStroke")
-    rightStroke.Color = Color3.fromRGB(100, 100, 100)
-    rightStroke.Thickness = 2
-    rightStroke.Transparency = 0.5
-    rightStroke.Parent = rightButton
-    
-    -- Exit button (top right)
-    exitButton = Instance.new("TextButton")
-    exitButton.Size = UDim2.new(0, 70, 0, 70)
-    exitButton.Position = UDim2.new(1, -90, 0, 120)
-    exitButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-    exitButton.BackgroundTransparency = 0.1
-    exitButton.BorderSizePixel = 0
-    exitButton.Text = "✕"
-    exitButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    exitButton.TextScaled = true
-    exitButton.Font = Enum.Font.GothamBold
-    exitButton.Parent = playerNameGui.screenGui
-    
-    local exitCorner = Instance.new("UICorner")
-    exitCorner.CornerRadius = UDim.new(0, 35)
-    exitCorner.Parent = exitButton
-    
-    -- Mobile touch effects
-    local function addTouchEffect(button, pressedColor)
-        local originalColor = button.BackgroundColor3
-        
-        button.MouseButton1Down:Connect(function()
-            button.BackgroundColor3 = pressedColor or Color3.fromRGB(80, 80, 80)
-            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size * 0.95})
-            tween:Play()
-        end)
-        
-        button.MouseButton1Up:Connect(function()
-            button.BackgroundColor3 = originalColor
-            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size / 0.95})
-            tween:Play()
-        end)
-        
-        button.MouseLeave:Connect(function()
-            button.BackgroundColor3 = originalColor
-            local tween = TweenService:Create(button, TweenInfo.new(0.1), {Size = button.Size / 0.95})
-            tween:Play()
-        end)
-    end
-    
-    addTouchEffect(leftButton)
-    addTouchEffect(rightButton)
-    addTouchEffect(exitButton, Color3.fromRGB(255, 80, 80))
-end
-
--- Function to spectate a player
-local function spectatePlayer(player)
-    if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-        return false
-    end
-    
-    local character = player.Character
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    
-    if humanoidRootPart then
-        Camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
-        Camera.CameraType = Enum.CameraType.Custom
-        playerNameGui.label.Text = "Spectating: " .. player.DisplayName
-        playerNameGui.countLabel.Text = "Player: " .. currentPlayerIndex .. "/" .. #playersToSpectate
-        return true
-    end
-    
-    return false
-end
-
--- Function to stop spectating
-local function stopSpectating()
-    if spectatingConnection then
-        spectatingConnection:Disconnect()
-        spectatingConnection = nil
-    end
-    
-    Camera.CameraSubject = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    Camera.CameraType = Enum.CameraType.Custom
-    
-    if playerNameGui then
-        playerNameGui.screenGui:Destroy()
-        playerNameGui = nil
-    end
-    
-    leftButton = nil
-    rightButton = nil
-    exitButton = nil
-    isSpectating = false
-end
-
--- Function to go to next player
-local function nextPlayer()
-    if #playersToSpectate == 0 then
-        updatePlayersList()
-        if #playersToSpectate == 0 then return end
-    end
-    
-    currentPlayerIndex = currentPlayerIndex + 1
-    if currentPlayerIndex > #playersToSpectate then
-        currentPlayerIndex = 1
-    end
-    
-    local success = spectatePlayer(playersToSpectate[currentPlayerIndex])
-    if not success then
-        updatePlayersList()
-        if #playersToSpectate > 0 then
-            currentPlayerIndex = 1
-            spectatePlayer(playersToSpectate[currentPlayerIndex])
-        end
-    end
-end
-
--- Function to go to previous player
-local function previousPlayer()
-    if #playersToSpectate == 0 then
-        updatePlayersList()
-        if #playersToSpectate == 0 then return end
-    end
-    
-    currentPlayerIndex = currentPlayerIndex - 1
-    if currentPlayerIndex < 1 then
-        currentPlayerIndex = #playersToSpectate
-    end
-    
-    local success = spectatePlayer(playersToSpectate[currentPlayerIndex])
-    if not success then
-        updatePlayersList()
-        if #playersToSpectate > 0 then
-            currentPlayerIndex = #playersToSpectate
-            spectatePlayer(playersToSpectate[currentPlayerIndex])
-        end
-    end
-end
-
--- Function to start spectating
-local function startSpectating()
-    updatePlayersList()
-    
-    if #playersToSpectate == 0 then
-        Rayfield:Notify({
-            Title = "Camera Spectator",
-            Content = "No players available to spectate!",
-            Duration = 3,
-            Image = 4483362458
-        })
-        return
-    end
-    
-    createPlayerNameGui()
-    createNavigationButtons()
-    
-    -- Spectate first player
-    currentPlayerIndex = 1
-    spectatePlayer(playersToSpectate[currentPlayerIndex])
-    
-    -- Connect buttons
-    if leftButton and rightButton and exitButton then
-        leftButton.MouseButton1Click:Connect(previousPlayer)
-        rightButton.MouseButton1Click:Connect(nextPlayer)
-        exitButton.MouseButton1Click:Connect(function()
-            isSpectating = false
-        end)
-    end
-    
-    -- Mobile-friendly input handling
-    spectatingConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        
-        -- Support for external keyboards on mobile
-        if input.KeyCode == Enum.KeyCode.Left then
-            previousPlayer()
-        elseif input.KeyCode == Enum.KeyCode.Right then
-            nextPlayer()
-        elseif input.KeyCode == Enum.KeyCode.Escape or input.KeyCode == Enum.KeyCode.ButtonX then
-            isSpectating = false
-        end
-        
-        -- Touch gestures (swipe left/right)
-        if input.UserInputType == Enum.UserInputType.Touch then
-            local startPos = input.Position
-            local connection
-            connection = UserInputService.InputEnded:Connect(function(endInput)
-                if endInput.UserInputType == Enum.UserInputType.Touch then
-                    local endPos = endInput.Position
-                    local deltaX = endPos.X - startPos.X
-                    
-                    if math.abs(deltaX) > 100 then -- Minimum swipe distance
-                        if deltaX > 0 then
-                            nextPlayer() -- Swipe right = next player
-                        else
-                            previousPlayer() -- Swipe left = previous player
-                        end
-                    end
-                    connection:Disconnect()
-                end
-            end)
-        end
-    end)
-    
-    -- Update players list periodically
-    RunService.Heartbeat:Connect(function()
-        if isSpectating then
-            -- Check if current player is still valid
-            local currentPlayer = playersToSpectate[currentPlayerIndex]
-            if not currentPlayer or not currentPlayer.Parent or not currentPlayer.Character or not currentPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                updatePlayersList()
-                if #playersToSpectate > 0 then
-                    currentPlayerIndex = math.min(currentPlayerIndex, #playersToSpectate)
-                    spectatePlayer(playersToSpectate[currentPlayerIndex])
-                else
-                    isSpectating = false
-                end
-            end
-        end
-    end)
-    
-    isSpectating = true
-end
-
--- Function to create platform
-local function createPlatform()
-    if platform then
-        platform:Destroy()
-    end
-    
-    platform = Instance.new("Part")
-    platform.Name = "AntiHackerPlatform"
-    platform.Size = Vector3.new(10, 1, 10)
-    platform.Anchored = true
-    platform.CanCollide = true
-    platform.Material = Enum.Material.Neon
-    platform.BrickColor = BrickColor.new("Bright blue")
-    platform.Position = HumanoidRootPart.Position - Vector3.new(0, 3, 0)
-    platform.Parent = Workspace
-    
-    -- Teleport player to platform
-    HumanoidRootPart.CFrame = CFrame.new(platform.Position + Vector3.new(0, 5, 0))
-end
-
--- Function to equip 3rd tool
-local function equipThirdTool()
-    local backpack = LocalPlayer.Backpack
-    local tools = {}
-    
-    for _, item in pairs(backpack:GetChildren()) do
-        if item:IsA("Tool") then
-            table.insert(tools, item)
-        end
-    end
-    
-    if #tools >= 3 then
-        local thirdTool = tools[3]
-        Humanoid:EquipTool(thirdTool)
-        return thirdTool
-    end
-    
-    return nil
-end
-
--- Function to shoot at hacker
-local function shootAtHacker(targetPosition)
-    local currentTool = Character:FindFirstChildOfClass("Tool")
-    
-    if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
-        local args = {
-            [1] = 1,
-            [2] = targetPosition
-        }
-        currentTool.GunServer.GunStart:FireServer(unpack(args))
-    end
-end
-
--- Function to detect hackers
-local function detectHacker(player)
-    if player == LocalPlayer then return end
-    
-    local character = player.Character
-    if not character then return end
-    
-    local humanoid = character:FindFirstChild("Humanoid")
-    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-    
-    if not humanoid or not humanoidRootPart then return end
-    
-    local isFlying = false
-    local isSpeedHacking = false
-    
-    -- Detect flying (not touching ground and moving)
-    local raycast = Workspace:Raycast(humanoidRootPart.Position, Vector3.new(0, -10, 0))
-    if not raycast and humanoidRootPart.Velocity.Magnitude > 1 then
-        isFlying = true
-    end
-    
-    -- Detect abnormal speed
-    if humanoid.WalkSpeed > maxNormalSpeed or humanoidRootPart.Velocity.Magnitude > maxNormalSpeed then
-        isSpeedHacking = true
-    end
-    
-    return isFlying, isSpeedHacking
-end
-
--- Main monitoring function
-local function monitorPlayers()
-    if not antiHackerEnabled then return end
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
-            local isFlying, isSpeedHacking = detectHacker(player)
-            
-            if isFlying or isSpeedHacking then
-                local character = player.Character
-                local humanoidRootPart = character and character:FindFirstChild("HumanoidRootPart")
-                
-                if humanoidRootPart then
-                    -- Mark as detected hacker
-                    detectedHackers[player.UserId] = true
-                    
-                    -- Create platform and equip tool
-                    createPlatform()
-                    local equippedTool = equipThirdTool()
-                    
-                    -- For flying hackers that are stationary, shoot directly
-                    if isFlying and humanoidRootPart.Velocity.Magnitude < 5 then
-                        shootAtHacker(humanoidRootPart.Position)
-                    end
-                    
-                    -- For speed hackers, pull and click
-                    if isSpeedHacking then
-                        -- Pull the hacker (teleport near platform)
-                        humanoidRootPart.CFrame = CFrame.new(platform.Position + Vector3.new(5, 3, 0))
-                        
-                        -- Auto-click near hacker
-                        wait(0.5) -- Small wait to stabilize
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                        wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                    end
-                    
-                    -- For flying hackers in movement, also click
-                    if isFlying and humanoidRootPart.Velocity.Magnitude >= 5 then
-                        wait(0.3)
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                        wait(0.1)
-                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                    end
-                end
-            end
-        end
-    end
-end
-
--- team and anti-enemys
-local function getNearbyPlayers(maxDistance)
-    local nearbyPlayers = {}
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return nearbyPlayers
-    end
-    
-    local localPosition = LocalPlayer.Character.HumanoidRootPart.Position
-    
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local distance = (player.Character.HumanoidRootPart.Position - localPosition).Magnitude
-            if distance <= maxDistance then
-                table.insert(nearbyPlayers, {player = player, distance = distance})
-            end
-        end
-    end
-    
-    return nearbyPlayers
-end
-
--- Function to teleport backwards
-local function teleportBackwards()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local currentPosition = LocalPlayer.Character.HumanoidRootPart.Position
-        local currentCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
-        
-        -- Calculate position 1 stud backwards based on looking direction
-        local backwardDirection = -currentCFrame.LookVector
-        local newPosition = currentPosition + (backwardDirection * 1)
-        
-        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition, newPosition + currentCFrame.LookVector)
-    end
-end
-
--- Function to clear all teams
-local function clearTeams()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Team then
-            player.Team = nil
-        end
-    end
-    
-    Rayfield:Notify({
-        Title = "Teams Cleared",
-        Content = "All player teams have been cleared!",
-        Duration = 3,
-        Image = 4483362458,
-    })
-end
-
--- Main detector function
-local function runDetector()
-    if not detectorEnabled then return end
-    
-    -- Detector 1: Distance 17.5 - Teleports backward when detecting any player
-    local nearbyPlayers17_5 = getNearbyPlayers(17.5)
-    if #nearbyPlayers17_5 > 0 then
-        -- Check if there are enemy players nearby (distance 10)
-        local enemyNearby = false
-        local nearbyPlayers10 = getNearbyPlayers(10)
-        
-        for _, playerData in pairs(nearbyPlayers10) do
-            local player = playerData.player
-            -- If player is not on same team (or no team system)
-            if not player.Team or not LocalPlayer.Team or player.Team ~= LocalPlayer.Team then
-                enemyNearby = true
-                break
-            end
-        end
-        
-        -- Only teleport if no enemies very close (distance 10)
-        if not enemyNearby then
-            teleportBackwards()
-        end
-    end
-    
-    -- Detector 2: Distance 10 - Don't teleport if player is on same team
-    local nearbyPlayers10 = getNearbyPlayers(10)
-    for _, playerData in pairs(nearbyPlayers10) do
-        local player = playerData.player
-        
-        -- If player is on same team, do nothing (don't teleport)
-        if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then
-            -- Same team player detected, don't teleport
-            continue
-        else
-            -- Enemy player nearby (10 studs), teleport backwards
-            teleportBackwards()
-            break
-        end
-    end
-end
-
--- Functions
+-- Funções de Hitbox
 local function createHitbox(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return
@@ -847,13 +276,11 @@ local function createHitbox(player)
     local character = player.Character
     local humanoidRootPart = character.HumanoidRootPart
     
-    -- Remove existing hitbox if any
     if hitboxParts[player] then
         hitboxParts[player]:Destroy()
         hitboxParts[player] = nil
     end
     
-    -- Create new hitbox
     local hitbox = Instance.new("Part")
     hitbox.Name = "ExpandedHitbox"
     hitbox.Anchored = true
@@ -869,7 +296,6 @@ local function createHitbox(player)
     
     hitboxParts[player] = hitbox
     
-    -- Update hitbox position
     local connection
     connection = RunService.Heartbeat:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and hitbox.Parent then
@@ -921,20 +347,18 @@ local function disableHitboxes()
     end
 end
 
--- Função para criar outline ESP
+-- Funções de ESP
 local function createESP(player)
     if player == LocalPlayer or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return
     end
     
     local character = player.Character
-    local humanoidRootPart = character.HumanoidRootPart
     
-    -- Criar highlight
     local highlight = Instance.new("Highlight")
     highlight.Name = "ESPHighlight"
     highlight.Adornee = character
-    highlight.FillColor = Color3.fromRGB(173, 216, 230) -- Azul claro
+    highlight.FillColor = Color3.fromRGB(173, 216, 230)
     highlight.FillTransparency = 0.8
     highlight.OutlineColor = Color3.fromRGB(173, 216, 230)
     highlight.OutlineTransparency = 0
@@ -943,14 +367,12 @@ local function createESP(player)
     return highlight
 end
 
--- Função para remover ESP
 local function removeESP(player)
     if player.Character and player.Character:FindFirstChild("ESPHighlight") then
         player.Character.ESPHighlight:Destroy()
     end
 end
 
--- Função para atualizar cor do ESP
 local function updateESPColor(player, color)
     if player.Character and player.Character:FindFirstChild("ESPHighlight") then
         local highlight = player.Character.ESPHighlight
@@ -959,7 +381,7 @@ local function updateESPColor(player, color)
     end
 end
 
--- Função para verificar se o player está no FOV
+-- Funções de Aimbot
 local function isPlayerInFOV(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return false
@@ -979,36 +401,30 @@ local function isPlayerInFOV(player)
     return distance <= FOVRadius
 end
 
--- Função para calcular posição com ping prediction
 local function getPredictedPosition(player)
-    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") or not player.Character:FindFirstChild("Humanoid") then
+    if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return nil
     end
     
     local humanoidRootPart = player.Character.HumanoidRootPart
-    local humanoid = player.Character.Humanoid
     
     if not PingPredictionEnabled then
         return humanoidRootPart.Position
     end
     
-    -- Calcular velocidade atual do player
     local velocity = humanoidRootPart.AssemblyLinearVelocity
     
-    -- Se o player não está se movendo, retorna posição atual
     if velocity.Magnitude < 1 then
         return humanoidRootPart.Position
     end
     
-    -- Calcular tempo de predição baseado no ping
-    local predictionTime = PingMS / 1000 -- Converter ms para segundos
-    
-    -- Calcular posição futura
+    local predictionTime = PingMS / 1000
     local currentPosition = humanoidRootPart.Position
     local predictedPosition = currentPosition + (velocity * predictionTime)
     
     return predictedPosition
 end
+
 local function hasLineOfSight(targetPosition)
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         return false
@@ -1027,7 +443,6 @@ local function hasLineOfSight(targetPosition)
         local hit = raycastResult.Instance
         local hitCharacter = hit.Parent
         
-        -- Verifica se acertou o character do target
         if hitCharacter and hitCharacter:FindFirstChild("Humanoid") then
             local player = Players:GetPlayerFromCharacter(hitCharacter)
             if player and targetPlayer and player == targetPlayer then
@@ -1039,59 +454,38 @@ local function hasLineOfSight(targetPosition)
     return false
 end
 
--- Função para verificar se há linha de visão com raycast
-local function hasLineOfSight(targetPosition)
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        return false
+local function pullPlayerToPosition(player, position)
+    if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        player.Character.HumanoidRootPart.CFrame = CFrame.new(position)
     end
-    
-    local origin = LocalPlayer.Character.HumanoidRootPart.Position
-    local direction = (targetPosition - origin).Unit * (targetPosition - origin).Magnitude
-    
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-    
-    local raycastResult = Workspace:Raycast(origin, direction, raycastParams)
-    
-    if raycastResult then
-        local hit = raycastResult.Instance
-        local hitCharacter = hit.Parent
-        
-        -- Verifica se acertou o character do target
-        if hitCharacter and hitCharacter:FindFirstChild("Humanoid") then
-            local player = Players:GetPlayerFromCharacter(hitCharacter)
-            if player and targetPlayer and player == targetPlayer then
-                return true
-            end
-        end
+end
+
+local function shootAtPosition(targetPosition)
+    local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
+        local args = {
+            [1] = 1,
+            [2] = targetPosition
+        }
+        currentTool.GunServer.GunStart:FireServer(unpack(args))
+        return true
     end
-    
     return false
 end
 
--- Função para executar auto shoot
 local function executeAutoShoot()
     if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetPosition = getPredictedPosition(targetPlayer)
         if not targetPosition then return false end
         
-        -- Verifica se há linha de visão (usa posição atual para raycast, mas atira na predição)
         local currentPosition = targetPlayer.Character.HumanoidRootPart.Position
         if hasLineOfSight(currentPosition) then
-            local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
-                local args = {
-                    [1] = 1,
-                    [2] = targetPosition -- Usa posição predita
-                }
-                currentTool.GunServer.GunStart:FireServer(unpack(args))
-                return true
-            end
+            return shootAtPosition(targetPosition)
         end
     end
     return false
 end
+
 local function getClosestPlayerInFOV()
     local closestPlayer = nil
     local closestDistance = math.huge
@@ -1113,6 +507,11 @@ local function getClosestPlayerInFOV()
     
     return closestPlayer
 end
+
+print("Bridge Hub MM2 - Parte 2 completa!")
+
+-- Bridge Hub MM2 Script - PARTE 3
+-- GUI Elements e Toggles
 
 -- Função para criar círculo FOV
 local function createFOVCircle()
@@ -1142,7 +541,7 @@ local function createFOVCircle()
     return screenGui
 end
 
--- Função para criar botão de aim arrastável
+-- Função para criar botão de aim
 local function createAimButton()
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "AimButtonGui"
@@ -1152,7 +551,7 @@ local function createAimButton()
     local button = Instance.new("TextButton")
     button.Name = "AimButton"
     button.Size = UDim2.new(0, 120, 0, 120)
-    button.Position = UDim2.new(1, -80, 0.5, -30)
+    button.Position = UDim2.new(1, -140, 0.5, -60)
     button.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
     button.Text = "AIM"
     button.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1164,7 +563,6 @@ local function createAimButton()
     corner.CornerRadius = UDim.new(1, 0)
     corner.Parent = button
     
-    -- Tornar arrastável
     local dragging = false
     local dragStart = nil
     local startPos = nil
@@ -1190,18 +588,23 @@ local function createAimButton()
         end
     end)
     
-    -- Função de atirar
     button.MouseButton1Click:Connect(function()
-        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            local targetPosition = getPredictedPosition(targetPlayer)
-            if targetPosition then
-                local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-                if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
-                    local args = {
-                        [1] = 1,
-                        [2] = targetPosition -- Usa posição predita
-                    }
-                    currentTool.GunServer.GunStart:FireServer(unpack(args))
+        if ShootType == "100% (Grab)" then
+            -- Modo Grab: Puxa o jogador e atira
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local myPos = LocalPlayer.Character.HumanoidRootPart.Position
+                local pullPos = myPos + (Camera.CFrame.LookVector * 5)
+                pullPlayerToPosition(targetPlayer, pullPos)
+                wait(0.1)
+                local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+                shootAtPosition(targetPosition)
+            end
+        else
+            -- Modo Normal
+            if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local targetPosition = getPredictedPosition(targetPlayer)
+                if targetPosition then
+                    shootAtPosition(targetPosition)
                 end
             end
         end
@@ -1210,7 +613,7 @@ local function createAimButton()
     return screenGui
 end
 
--- Toggle ESP
+-- MAIN TAB TOGGLES E SLIDERS
 local ESPToggle = MainTab:CreateToggle({
     Name = "Esp",
     CurrentValue = false,
@@ -1219,30 +622,26 @@ local ESPToggle = MainTab:CreateToggle({
         ESPEnabled = Value
         
         if ESPEnabled then
-            -- Função para atualizar ESP
             local function updateAllESP()
                 for _, player in pairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer then
-                        removeESP(player) -- Remove o ESP antigo
-                        createESP(player) -- Cria novo ESP
+                        removeESP(player)
+                        createESP(player)
                     end
                 end
             end
             
-            -- Criar ESP inicial
             updateAllESP()
             
-            -- Loop de atualização do ESP a cada 2 segundos
             espConnections.ESPUpdateLoop = task.spawn(function()
                 while ESPEnabled do
-                    wait(2) -- Atualiza a cada 2 segundos
+                    wait(2)
                     if ESPEnabled then
                         updateAllESP()
                     end
                 end
             end)
             
-            -- Conectar para novos players
             espConnections.PlayerAdded = Players.PlayerAdded:Connect(function(player)
                 if ESPEnabled then
                     player.CharacterAdded:Connect(function()
@@ -1256,18 +655,14 @@ local ESPToggle = MainTab:CreateToggle({
                 removeESP(player)
             end)
         else
-            -- Remover ESP de todos os players
             for _, player in pairs(Players:GetPlayers()) do
                 removeESP(player)
             end
             
-            -- Desconectar eventos
             for name, connection in pairs(espConnections) do
                 if name == "ESPUpdateLoop" then
-                    -- Para a corrotina
                     task.cancel(connection)
                 else
-                    -- Desconecta eventos normais
                     connection:Disconnect()
                 end
             end
@@ -1276,7 +671,16 @@ local ESPToggle = MainTab:CreateToggle({
     end,
 })
 
--- Toggle Aimbot
+local ShootTypeDropdown = MainTab:CreateDropdown({
+    Name = "Shoot Type",
+    Options = {"Normal", "100% (Grab)"},
+    CurrentOption = "Normal",
+    Flag = "ShootType",
+    Callback = function(Option)
+        ShootType = Option
+    end,
+})
+
 local AimbotToggle = MainTab:CreateToggle({
     Name = "Shoot button + Fov",
     CurrentValue = false,
@@ -1285,30 +689,24 @@ local AimbotToggle = MainTab:CreateToggle({
         AimbotEnabled = Value
         
         if AimbotEnabled then
-            -- Criar círculo FOV
             fovCircle = createFOVCircle()
-            -- Criar botão de aim
             aimButton = createAimButton()
             
-            -- Loop principal do aimbot
             espConnections.AimbotLoop = RunService.Heartbeat:Connect(function()
                 if AimbotEnabled and ESPEnabled then
                     local closestPlayer = getClosestPlayerInFOV()
                     
-                    -- Resetar cores de todos os players
                     for _, player in pairs(Players:GetPlayers()) do
                         if player ~= LocalPlayer then
-                            updateESPColor(player, Color3.fromRGB(173, 216, 230)) -- Azul claro
+                            updateESPColor(player, Color3.fromRGB(173, 216, 230))
                         end
                     end
                     
-                    -- Destacar target em vermelho
                     if closestPlayer then
                         targetPlayer = closestPlayer
-                        updateESPColor(closestPlayer, Color3.fromRGB(255, 0, 0)) -- Vermelho
+                        updateESPColor(closestPlayer, Color3.fromRGB(255, 0, 0))
                         
-                        -- Auto shoot se ativado
-                        if AutoShootEnabled then
+                        if AutoShootEnabled and ShootType == "Normal" then
                             executeAutoShoot()
                         end
                     else
@@ -1317,7 +715,6 @@ local AimbotToggle = MainTab:CreateToggle({
                 end
             end)
         else
-            -- Limpar tudo
             if fovCircle then
                 fovCircle:Destroy()
                 fovCircle = nil
@@ -1332,11 +729,10 @@ local AimbotToggle = MainTab:CreateToggle({
             end
             targetPlayer = nil
             
-            -- Resetar cores do ESP
             if ESPEnabled then
                 for _, player in pairs(Players:GetPlayers()) do
                     if player ~= LocalPlayer then
-                        updateESPColor(player, Color3.fromRGB(173, 216, 230)) -- Azul claro
+                        updateESPColor(player, Color3.fromRGB(173, 216, 230))
                     end
                 end
             end
@@ -1344,7 +740,6 @@ local AimbotToggle = MainTab:CreateToggle({
     end,
 })
 
--- Toggle Ping Prediction
 local PingToggle = MainTab:CreateToggle({
     Name = "Ping Prediction",
     CurrentValue = false,
@@ -1354,7 +749,6 @@ local PingToggle = MainTab:CreateToggle({
     end,
 })
 
--- Slider Ping MS
 local PingSlider = MainTab:CreateSlider({
     Name = "Ping (MS)",
     Range = {50, 2000},
@@ -1366,9 +760,8 @@ local PingSlider = MainTab:CreateSlider({
     end,
 })
 
--- Toggle Auto Shoot
 local AutoShootToggle = MainTab:CreateToggle({
-    Name = "Auto Shoot",
+    Name = "Auto Shoot (Only Normal Mode)",
     CurrentValue = false,
     Flag = "AutoShoot",
     Callback = function(Value)
@@ -1376,7 +769,6 @@ local AutoShootToggle = MainTab:CreateToggle({
     end,
 })
 
--- Slider FOV
 local FOVSlider = MainTab:CreateSlider({
     Name = "Fov Size",
     Range = {50, 300},
@@ -1386,68 +778,243 @@ local FOVSlider = MainTab:CreateSlider({
     Callback = function(Value)
         FOVRadius = Value
         
-        -- Atualizar círculo FOV se existir
         if fovCircle and fovCircle:FindFirstChild("FOVCircle") then
             fovCircle.FOVCircle.Size = UDim2.new(0, FOVRadius * 2, 0, FOVRadius * 2)
         end
     end,
 })
 
+-- HITBOX TAB
 local HitboxToggle = HitboxTab:CreateToggle({
-   Name = "Enable Expanded Hitbox",
-   CurrentValue = false,
-   Flag = "HitboxToggle",
-   Callback = function(Value)
+    Name = "Enable Expanded Hitbox",
+    CurrentValue = false,
+    Flag = "HitboxToggle",
+    Callback = function(Value)
         hitboxEnabled = Value
         if hitboxEnabled then
             enableHitboxes()
         else
             disableHitboxes()
         end
-   end,
+    end,
 })
 
--- Slider for hitbox size
 local SizeSlider = HitboxTab:CreateSlider({
-   Name = "Hitbox Size",
-   Range = {1, 20},
-   Increment = 0.5,
-   Suffix = " studs",
-   CurrentValue = 5,
-   Flag = "HitboxSize",
-   Callback = function(Value)
+    Name = "Hitbox Size",
+    Range = {1, 20},
+    Increment = 0.5,
+    Suffix = " studs",
+    CurrentValue = 5,
+    Flag = "HitboxSize",
+    Callback = function(Value)
         hitboxSize = Value
         updateAllHitboxes()
-   end,
+    end,
 })
 
--- Slider for hitbox transparency
 local TransparencySlider = HitboxTab:CreateSlider({
-   Name = "Hitbox Transparency",
-   Range = {0, 1},
-   Increment = 0.1,
-   Suffix = "",
-   CurrentValue = 0.8,
-   Flag = "HitboxTransparency",
-   Callback = function(Value)
+    Name = "Hitbox Transparency",
+    Range = {0, 1},
+    Increment = 0.1,
+    Suffix = "",
+    CurrentValue = 0.8,
+    Flag = "HitboxTransparency",
+    Callback = function(Value)
         hitboxTransparency = Value
         updateAllHitboxes()
-   end,
+    end,
 })
 
--- Information section
-local Section = HitboxTab:CreateSection("Information")
+-- PLAYER TAB
+local SpeedToggle = PlayerTab:CreateToggle({
+    Name = "Speed Hack",
+    CurrentValue = false,
+    Flag = "SpeedToggle",
+    Callback = function(Value)
+        speedEnabled = Value
+        if speedEnabled then
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = playerSpeed
+            end
+        else
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.WalkSpeed = 16
+            end
+        end
+    end,
+})
 
-HitboxTab:CreateParagraph({
-   Title = "How to use:",
-   Content = "1. Enable the toggle to create expanded hitboxes on players\n2. Adjust hitbox size with the slider\n3. Adjust transparency for better visibility\n4. Hitboxes update every 2 seconds for performance"
+local SpeedSlider = PlayerTab:CreateSlider({
+    Name = "Speed Value",
+    Range = {16, 200},
+    Increment = 1,
+    Suffix = " studs/s",
+    CurrentValue = 16,
+    Flag = "SpeedValue",
+    Callback = function(Value)
+        playerSpeed = Value
+        if speedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = playerSpeed
+        end
+    end,
+})
+
+-- KNIFE TAB
+local AutoKnifeToggle = KnifeTab:CreateToggle({
+    Name = "Auto Knife All Players",
+    CurrentValue = false,
+    Flag = "AutoKnifeToggle",
+    Callback = function(Value)
+        autoKnifeEnabled = Value
+        
+        if autoKnifeEnabled then
+            espConnections.AutoKnifeLoop = RunService.Heartbeat:Connect(function()
+                if autoKnifeEnabled then
+                    local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    if currentTool then
+                        for _, player in pairs(Players:GetPlayers()) do
+                            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                local myPos = LocalPlayer.Character.HumanoidRootPart.Position
+                                local pullPos = myPos + Vector3.new(0, 0, 3)
+                                pullPlayerToPosition(player, pullPos)
+                                wait(0.05)
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if espConnections.AutoKnifeLoop then
+                espConnections.AutoKnifeLoop:Disconnect()
+                espConnections.AutoKnifeLoop = nil
+            end
+        end
+    end,
+})
+
+local AutoKillToggle = KnifeTab:CreateToggle({
+    Name = "Auto Kill (Click + FOV)",
+    CurrentValue = false,
+    Flag = "AutoKillToggle",
+    Callback = function(Value)
+        autoKillEnabled = Value
+        
+        if autoKillEnabled then
+            espConnections.AutoKillInput = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+                if gameProcessed then return end
+                
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    if autoKillEnabled and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                        if currentTool then
+                            local originalPos = targetPlayer.Character.HumanoidRootPart.CFrame
+                            local myPos = LocalPlayer.Character.HumanoidRootPart.Position
+                            local pullPos = myPos + (Camera.CFrame.LookVector * 3)
+                            
+                            pullPlayerToPosition(targetPlayer, pullPos)
+                            wait(0.2)
+                            targetPlayer.Character.HumanoidRootPart.CFrame = originalPos
+                        end
+                    end
+                end
+            end)
+        else
+            if espConnections.AutoKillInput then
+                espConnections.AutoKillInput:Disconnect()
+                espConnections.AutoKillInput = nil
+            end
+        end
+    end,
+})
+
+-- ANTI-HACKER TAB
+local AntiHackerToggle = AntiHackerTab:CreateToggle({
+    Name = "Anti-Hacker System",
+    CurrentValue = false,
+    Flag = "AntiHackerToggle",
+    Callback = function(Value)
+        antiHackerEnabled = Value
+        
+        if Value then
+            connection = RunService.Heartbeat:Connect(function()
+                if not antiHackerEnabled then return end
+                
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+                        local humanoid = player.Character.Humanoid
+                        local humanoidRootPart = player.Character.HumanoidRootPart
+                        
+                        if humanoid.WalkSpeed > maxNormalSpeed or humanoidRootPart.AssemblyLinearVelocity.Magnitude > maxNormalSpeed then
+                            Rayfield:Notify({
+                                Title = "Hacker Detected",
+                                Content = player.Name .. " is speed hacking!",
+                                Duration = 3,
+                                Image = 4483362458,
+                            })
+                        end
+                    end
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end,
+})
+
+-- TEAM TAB
+local TeamDetectorToggle = TeamTab:CreateToggle({
+    Name = "Anti enemys + team check",
+    CurrentValue = false,
+    Flag = "DetectorToggle",
+    Callback = function(Value)
+        detectorEnabled = Value
+        
+        if detectorEnabled then
+            connection = RunService.Heartbeat:Connect(function()
+                if not detectorEnabled then return end
+                
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local localPosition = LocalPlayer.Character.HumanoidRootPart.Position
+                    
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                            local distance = (player.Character.HumanoidRootPart.Position - localPosition).Magnitude
+                            
+                            if distance <= 17.5 then
+                                local isEnemy = true
+                                if player.Team and LocalPlayer.Team and player.Team == LocalPlayer.Team then
+                                    isEnemy = false
+                                end
+                                
+                                if isEnemy then
+                                    local currentCFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+                                    local backwardDirection = -currentCFrame.LookVector
+                                    local newPosition = localPosition + (backwardDirection * 1)
+                                    LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(newPosition, newPosition + currentCFrame.LookVector)
+                                    break
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end,
 })
 
 -- Event Connections
 Players.PlayerAdded:Connect(function(player)
     if hitboxEnabled and player ~= LocalPlayer then
         player.CharacterAdded:Connect(function()
-            wait(1) -- Wait for character to fully load
+            wait(1)
             if hitboxEnabled then
                 createHitbox(player)
             end
@@ -1459,7 +1026,6 @@ Players.PlayerRemoving:Connect(function(player)
     removeHitbox(player)
 end)
 
--- Handle existing players
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         player.CharacterAdded:Connect(function()
@@ -1468,199 +1034,24 @@ for _, player in pairs(Players:GetPlayers()) do
                 createHitbox(player)
             end
         end)
-        
-        -- If player already has character
-        if player.Character then
-            player.CharacterAdded:Connect(function()
-                wait(1)
-                if hitboxEnabled then
-                    createHitbox(player)
-                end
-            end)
-        end
     end
 end
 
--- Anti-Hacker Toggle
-local Toggle = AntiHackerTab:CreateToggle({
-   Name = "Anti-Hacker System",
-   CurrentValue = false,
-   Flag = "AntiHackerToggle",
-   Callback = function(Value)
-       antiHackerEnabled = Value
-       
-       if Value then
-           -- Start monitoring
-           connection = RunService.Heartbeat:Connect(monitorPlayers)
-           Rayfield:Notify({
-               Title = "Anti-Hacker Active",
-               Content = "Detection system started!",
-               Duration = 3,
-               Image = 4483362458,
-           })
-       else
-           -- Stop monitoring
-           if connection then
-               connection:Disconnect()
-               connection = nil
-           end
-           
-           -- Clear platform
-           if platform then
-               platform:Destroy()
-               platform = nil
-           end
-           
-           -- Clear detected hackers list
-           detectedHackers = {}
-           
-           Rayfield:Notify({
-               Title = "Anti-Hacker Disabled",
-               Content = "Detection system stopped!",
-               Duration = 3,
-               Image = 4483362458,
-           })
-       end
-   end,
-})
-
--- Slider to adjust maximum speed
-local SpeedSlider = AntiHackerTab:CreateSlider({
-   Name = "Maximum Allowed Speed",
-   Range = {10, 30},
-   Increment = 1,
-   Suffix = " studs/s",
-   CurrentValue = 17,
-   Flag = "MaxSpeedSlider",
-   Callback = function(Value)
-       maxNormalSpeed = Value
-       Rayfield:Notify({
-           Title = "Speed Updated",
-           Content = "New maximum speed: " .. Value,
-           Duration = 2,
-           Image = 4483362458,
-       })
-   end,
-})
-
--- Button to clear detected hackers
-local ClearButton = AntiHackerTab:CreateButton({
-   Name = "Clear Hacker List",
-   Callback = function()
-       detectedHackers = {}
-       if platform then
-           platform:Destroy()
-           platform = nil
-       end
-       Rayfield:Notify({
-           Title = "List Cleared",
-           Content = "Detected hackers list has been cleared!",
-           Duration = 2,
-           Image = 4483362458,
-       })
-   end,
-})
-
--- Update character references when respawning
 LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Character = newCharacter
     Humanoid = Character:WaitForChild("Humanoid")
     HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
-end)
-
--- Loading notification
-
--- Toggle to enable/disable detector
-local Toggle = TeamTab:CreateToggle({
-   Name = "Anti enemys + team check",
-   CurrentValue = false,
-   Flag = "DetectorToggle",
-   Callback = function(Value)
-        detectorEnabled = Value
-        
-        if detectorEnabled then
-            -- Connect detector to RunService
-            connection = RunService.Heartbeat:Connect(runDetector)
-            Rayfield:Notify({
-                Title = "Detector Enabled",
-                Content = "Player detection system active!",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        else
-            -- Disconnect detector
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-            Rayfield:Notify({
-                Title = "Detector Disabled",
-                Content = "Player detection system disabled!",
-                Duration = 3,
-                Image = 4483362458,
-            })
-        end
-   end,
-})
-
-local SpectatorToggle = AntiHackerTab:CreateToggle({
-    Name = "spectator",
-    CurrentValue = false,
-    Flag = "MobileSpectatorToggle",
-    Callback = function(value)
-        if value then
-            startSpectating()
-        else
-            stopSpectating()
-        end
-    end,
-})
-
--- Button to clear teams
-local ClearTeamsButton = TeamTab:CreateButton({
-   Name = "Clear All Teams",
-   Callback = function()
-        clearTeams()
-   end,
-})
-
--- Information section
-TeamTab:CreateSection("System Information")
-
-TabTeam:CreateParagraph({
-    Title = "How It Works",
-    Content = "Detector 1: Detects players at 17.5 studs and teleports you 1 stud backwards.\n\nDetector 2: Detects players at 10 studs - if teammate, doesn't teleport. If enemy, teleports backwards."
-})
-
-TabTeam:CreateParagraph({
-    Title = "Settings",
-    Content = "• Detector 1 Distance: 17.5 studs\n• Detector 2 Distance: 10 studs\n• Teleport Distance: 1 stud (backwards)"
-})
-
-TabTeam:CreateParagraph({
-    Title = "Clear Teams",
-    Content = "Use the 'Clear All Teams' button to remove team assignments from all players. This makes the detector treat everyone as enemies."
-})
-
-
-Rayfield:Notify({
-   Title = "System Loaded",
-   Content = "Anti-Hacker System is ready to use!",
-   Duration = 5,
-   Image = 4483362458,
-})
-
--- Limpar ao sair
-Players.PlayerRemoving:Connect(function(player)
-    if player == LocalPlayer then
-        if fovCircle then fovCircle:Destroy() end
-        if aimButton then aimButton:Destroy() end
-        for name, connection in pairs(espConnections) do
-            if name == "ESPUpdateLoop" then
-                task.cancel(connection)
-            else
-                connection:Disconnect()
-            end
-        end
+    
+    if speedEnabled then
+        Humanoid.WalkSpeed = playerSpeed
     end
 end)
+
+Rayfield:Notify({
+    Title = "System Loaded",
+    Content = "Bridge Hub loaded successfully!",
+    Duration = 5,
+    Image = 4483362458,
+})
+
+print("Bridge Hub MM2 - Parte 3 completa! Script totalmente carregado!")
