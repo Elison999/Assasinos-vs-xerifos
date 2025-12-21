@@ -751,7 +751,7 @@ local PingToggle = MainTab:CreateToggle({
 
 local PingSlider = MainTab:CreateSlider({
     Name = "Ping (MS)",
-    Range = {50, 2000},
+    Range = {50, 200},
     Increment = 5,
     CurrentValue = 100,
     Flag = "PingMS",
@@ -947,7 +947,7 @@ local AutoKillToggle = KnifeTab:CreateToggle({
                         if currentTool then
                             local originalPos = targetPlayer.Character.HumanoidRootPart.CFrame
                             local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-                            local pullPos = myPos + (Camera.CFrame.LookVector * 3)
+                            local pullPos = myPos + (Camera.CFrame.LookVector * 8)
                             
                             pullPlayerToPosition(targetPlayer, pullPos)
                             wait(0.2)
