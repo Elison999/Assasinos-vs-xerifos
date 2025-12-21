@@ -464,7 +464,7 @@ local function shootAtPosition(targetPosition)
     local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
     if currentTool and currentTool:FindFirstChild("GunServer") and currentTool.GunServer:FindFirstChild("GunStart") then
         local args = {
-            [1] = 1,
+            [1] = 10,
             [2] = targetPosition
         }
         currentTool.GunServer.GunStart:FireServer(unpack(args))
@@ -908,7 +908,7 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                                     end
                                 end
                                 
-                                wait(0.05)
+                                wait(0.2)
                             end
                         end
                     end
