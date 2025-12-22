@@ -1,5 +1,6 @@
--- Bridge Hub MM2 Space GUI Script - PARTE 1
--- Criado para Roblox
+-- Bridge Hub MM2 Complete Script - PARTE 1
+-- GUI de Introdução Espacial + Inicialização de Serviços
+-- Criado para Roblox Murder Mystery 2
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -180,13 +181,18 @@ fadeOutTween.Completed:Connect(function()
     screenGui:Destroy()
 end)
 
-print("Bridge Hub MM2 - Space GUI carregada - Parte 1 completa!")
+print("Bridge Hub MM2 - Parte 1 completa! Carregando interface principal...")
 
--- Bridge Hub MM2 Script - PARTE 2
--- Variáveis e Funções Principais
+-- Aguardar a GUI desaparecer antes de continuar
+wait(1.5)
 
+-- Bridge Hub MM2 Complete Script - PARTE 2
+-- Rayfield UI + Variáveis Globais + Funções Base (Hitbox, ESP, Aimbot)
+
+-- Carregar Rayfield UI Library
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Serviços do Roblox
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -194,13 +200,18 @@ local Workspace = game:GetService("Workspace")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 
+-- Player Local
 local LocalPlayer = Players.LocalPlayer
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
 local Camera = Workspace.CurrentCamera
 
--- Variáveis Globais
+-- ====================================
+-- VARIÁVEIS GLOBAIS
+-- ====================================
+
+-- Anti-Hacker & Detector
 local detectorEnabled = false
 local antiHackerEnabled = false
 local maxNormalSpeed = 23
@@ -208,6 +219,12 @@ local detectedHackers = {}
 local platform = nil
 local connection = nil
 
+-- Anti-Hacker V2 (Detecção de Voo)
+local autoKnifeEnabled = false
+local airTimeThreshold = 3
+local playerAirTime = {}
+
+-- ESP & Aimbot
 local ESPEnabled = false
 local AimbotEnabled = false
 local AutoShootEnabled = false
@@ -220,18 +237,21 @@ local fovCircle = nil
 local aimButton = nil
 local ShootType = "Normal"
 
+-- Hitbox
 local hitboxEnabled = false
 local hitboxSize = 5
 local hitboxTransparency = 0.8
 local connections = {}
 local hitboxParts = {}
 
+-- Player
 local speedEnabled = false
 local playerSpeed = 16
 
-local autoKnifeEnabled = false
+-- Knife
 local autoKillEnabled = false
 
+-- Spectator
 local originalCFrame = Camera.CFrame
 local isSpectating = false
 local currentPlayerIndex = 1
@@ -244,14 +264,17 @@ local leftButton
 local rightButton
 local exitButton
 
--- Criar GUI Principal
+-- ====================================
+-- CRIAR GUI PRINCIPAL (RAYFIELD)
+-- ====================================
+
 local Window = Rayfield:CreateWindow({
     Name = "Assasinos vs xerifos - Bridge Hub",
-    LoadingTitle = "Loading",
+    LoadingTitle = "Loading Bridge Hub",
     LoadingSubtitle = "by darker9899",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "ESPAimbot",
+        FolderName = "BridgeHubMM2",
         FileName = "config"
     },
     Discord = {
@@ -260,14 +283,18 @@ local Window = Rayfield:CreateWindow({
     KeySystem = false
 })
 
+-- Criar Tabs
 local MainTab = Window:CreateTab("Main", 4483362458)
 local HitboxTab = Window:CreateTab("Hitbox", 4483362458)
 local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458)
-local AntiHackerTab = Window:CreateTab("Anti-Hacker", 4483362458)
+local AntiHackerTab = Window:CreateTab("🛡️ Anti Hacker V2", 4483362458)
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local KnifeTab = Window:CreateTab("Knife", 4483362458)
 
--- Funções de Hitbox
+-- ====================================
+-- FUNÇÕES DE HITBOX
+-- ====================================
+
 local function createHitbox(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return
@@ -347,7 +374,10 @@ local function disableHitboxes()
     end
 end
 
--- Funções de ESP
+-- ====================================
+-- FUNÇÕES DE ESP
+-- ====================================
+
 local function createESP(player)
     if player == LocalPlayer or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return
@@ -381,7 +411,10 @@ local function updateESPColor(player, color)
     end
 end
 
--- Funções de Aimbot
+-- ====================================
+-- FUNÇÕES DE AIMBOT
+-- ====================================
+
 local function isPlayerInFOV(player)
     if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
         return false
@@ -508,10 +541,14 @@ local function getClosestPlayerInFOV()
     return closestPlayer
 end
 
-print("Bridge Hub MM2 - Parte 2 completa!")
+print("Bridge Hub MM2 - Parte 2 completa! Funções base carregadas...")
 
--- Bridge Hub MM2 Script - PARTE 3
--- GUI Elements e Toggles
+-- Bridge Hub MM2 Complete Script - PARTE 3
+-- GUI Elements (FOV Circle, Aim Button) + Toggles/Sliders (Main, Hitbox, Player, Knife, Team)
+
+-- ====================================
+-- FUNÇÕES PARA CRIAR GUI ELEMENTS
+-- ====================================
 
 -- Função para criar círculo FOV
 local function createFOVCircle()
@@ -613,7 +650,10 @@ local function createAimButton()
     return screenGui
 end
 
--- MAIN TAB TOGGLES E SLIDERS
+-- ====================================
+-- MAIN TAB - TOGGLES E SLIDERS
+-- ====================================
+
 local ESPToggle = MainTab:CreateToggle({
     Name = "Esp",
     CurrentValue = false,
@@ -784,7 +824,10 @@ local FOVSlider = MainTab:CreateSlider({
     end,
 })
 
--- HITBOX TAB
+-- ====================================
+-- HITBOX TAB - TOGGLES E SLIDERS
+-- ====================================
+
 local HitboxToggle = HitboxTab:CreateToggle({
     Name = "Enable Expanded Hitbox",
     CurrentValue = false,
@@ -825,7 +868,10 @@ local TransparencySlider = HitboxTab:CreateSlider({
     end,
 })
 
--- PLAYER TAB
+-- ====================================
+-- PLAYER TAB - TOGGLES E SLIDERS
+-- ====================================
+
 local SpeedToggle = PlayerTab:CreateToggle({
     Name = "Speed Hack",
     CurrentValue = false,
@@ -859,7 +905,10 @@ local SpeedSlider = PlayerTab:CreateSlider({
     end,
 })
 
--- KNIFE TAB
+-- ====================================
+-- KNIFE TAB - TOGGLES
+-- ====================================
+
 local AutoKnifeToggle = KnifeTab:CreateToggle({
     Name = "Auto Knife All Players",
     CurrentValue = false,
@@ -876,7 +925,7 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                                 local myPos = LocalPlayer.Character.HumanoidRootPart.Position
                                 local lookVector = LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector
-                                local pullPos = myPos + (lookVector * 7) -- Distância de 7 studs
+                                local pullPos = myPos + (lookVector * 7)
                                 pullPlayerToPosition(player, pullPos)
                                 
                                 -- Aumentar hitbox para 8
@@ -895,7 +944,6 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                                         tempHitbox.CFrame = hrp.CFrame
                                         tempHitbox.Parent = workspace
                                         
-                                        -- Atualizar posição da hitbox
                                         local hitboxConnection
                                         hitboxConnection = RunService.Heartbeat:Connect(function()
                                             if tempHitbox and tempHitbox.Parent and hrp and hrp.Parent then
@@ -965,44 +1013,10 @@ local AutoKillToggle = KnifeTab:CreateToggle({
     end,
 })
 
--- ANTI-HACKER TAB
-local AntiHackerToggle = AntiHackerTab:CreateToggle({
-    Name = "Anti-Hacker System",
-    CurrentValue = false,
-    Flag = "AntiHackerToggle",
-    Callback = function(Value)
-        antiHackerEnabled = Value
-        
-        if Value then
-            connection = RunService.Heartbeat:Connect(function()
-                if not antiHackerEnabled then return end
-                
-                for _, player in pairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
-                        local humanoid = player.Character.Humanoid
-                        local humanoidRootPart = player.Character.HumanoidRootPart
-                        
-                        if humanoid.WalkSpeed > maxNormalSpeed or humanoidRootPart.AssemblyLinearVelocity.Magnitude > maxNormalSpeed then
-                            Rayfield:Notify({
-                                Title = "Hacker Detected",
-                                Content = player.Name .. " is speed hacking!",
-                                Duration = 3,
-                                Image = 4483362458,
-                            })
-                        end
-                    end
-                end
-            end)
-        else
-            if connection then
-                connection:Disconnect()
-                connection = nil
-            end
-        end
-    end,
-})
+-- ====================================
+-- TEAM TAB - TOGGLE
+-- ====================================
 
--- TEAM TAB
 local TeamDetectorToggle = TeamTab:CreateToggle({
     Name = "Anti enemys + team check",
     CurrentValue = false,
@@ -1048,8 +1062,245 @@ local TeamDetectorToggle = TeamTab:CreateToggle({
     end,
 })
 
--- Event Connections
+print("Bridge Hub MM2 - Parte 3 completa! Toggles e Sliders carregados...")
+
+-- Bridge Hub MM2 Complete Script - PARTE 4 (FINAL)
+-- Anti-Hacker V2 (Detecção de Voo) + Anti-Hacker V1 (Speed) + Event Connections + Finalização
+
+-- ====================================
+-- ANTI-HACKER V2 - DETECÇÃO DE VOO
+-- ====================================
+
+local Section = AntiHackerTab:CreateSection("Detecção de Voo")
+
+-- Função para verificar se o personagem está no chão
+local function isOnGround(character)
+    if not character then return true end
+    
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    
+    if not humanoid or not rootPart then return true end
+    
+    -- Se o humanoid está em um estado que indica estar no chão
+    if humanoid:GetState() == Enum.HumanoidStateType.Landed or 
+       humanoid:GetState() == Enum.HumanoidStateType.Running or
+       humanoid:GetState() == Enum.HumanoidStateType.RunningNoPhysics then
+        return true
+    end
+    
+    -- Raycast para baixo para verificar se há chão próximo
+    local rayParams = RaycastParams.new()
+    rayParams.FilterDescendantsInstances = {character}
+    rayParams.FilterType = Enum.RaycastFilterType.Blacklist
+    
+    local ray = workspace:Raycast(rootPart.Position, Vector3.new(0, -5, 0), rayParams)
+    
+    return ray ~= nil
+end
+
+-- Função para teleportar e usar a knife
+local function attackFlyingPlayer(targetPlayer)
+    if not targetPlayer.Character then return end
+    
+    local localChar = LocalPlayer.Character
+    if not localChar then return end
+    
+    local targetRoot = targetPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+    
+    if not targetRoot or not localRoot then return end
+    
+    -- Teleportar para o jogador
+    local originalPosition = localRoot.CFrame
+    localRoot.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 3)
+    
+    wait(0.1)
+    
+    -- Equipar a 3ª tool (knife)
+    local backpack = LocalPlayer.Backpack
+    local tools = backpack:GetChildren()
+    
+    if #tools >= 3 then
+        local knife = tools[3]
+        LocalPlayer.Character.Humanoid:EquipTool(knife)
+        
+        wait(0.1)
+        
+        -- Ativar a tool (clicar)
+        if knife:IsA("Tool") then
+            knife:Activate()
+            wait(0.5)
+            knife:Activate()
+        end
+    end
+    
+    wait(0.5)
+    
+    -- Voltar para posição original
+    localRoot.CFrame = originalPosition
+    
+    Rayfield:Notify({
+       Title = "Hacker Detectado!",
+       Content = targetPlayer.Name .. " foi punido por voar!",
+       Duration = 3,
+       Image = 4483362458,
+    })
+end
+
+-- Loop de monitoramento de voo
+local flyConnection
+local FlyToggle = AntiHackerTab:CreateToggle({
+    Name = "Auto Knife Hacker (Voo)",
+    CurrentValue = false,
+    Flag = "AutoKnifeHacker",
+    Callback = function(Value)
+        autoKnifeEnabled = Value
+        
+        if Value then
+            Rayfield:Notify({
+                Title = "Anti-Hacker Ativado",
+                Content = "Monitorando jogadores voando...",
+                Duration = 3,
+                Image = 4483362458,
+            })
+            
+            -- Inicializar tabela de tempo no ar
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer then
+                    playerAirTime[player.UserId] = 0
+                end
+            end
+            
+            flyConnection = RunService.Heartbeat:Connect(function(deltaTime)
+                if not autoKnifeEnabled then return end
+                
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character then
+                        local character = player.Character
+                        local humanoid = character:FindFirstChildOfClass("Humanoid")
+                        
+                        if humanoid and humanoid.Health > 0 then
+                            -- Ignorar se o humanoid está em estado de pulo normal
+                            local state = humanoid:GetState()
+                            if state == Enum.HumanoidStateType.Jumping then
+                                playerAirTime[player.UserId] = 0
+                                continue
+                            end
+                            
+                            if not isOnGround(character) then
+                                -- Jogador está no ar
+                                playerAirTime[player.UserId] = (playerAirTime[player.UserId] or 0) + deltaTime
+                                
+                                -- Se passou do limite de tempo, considerar como voo
+                                if playerAirTime[player.UserId] >= airTimeThreshold then
+                                    attackFlyingPlayer(player)
+                                    playerAirTime[player.UserId] = 0 -- Reset após punir
+                                    wait(5) -- Cooldown entre ataques
+                                end
+                            else
+                                -- Jogador está no chão, resetar contador
+                                playerAirTime[player.UserId] = 0
+                            end
+                        end
+                    end
+                end
+            end)
+            
+        else
+            if flyConnection then
+                flyConnection:Disconnect()
+            end
+            playerAirTime = {}
+            
+            Rayfield:Notify({
+                Title = "Anti-Hacker Desativado",
+                Content = "Monitoramento desligado",
+                Duration = 2,
+                Image = 4483362458,
+            })
+        end
+    end,
+})
+
+-- Slider para ajustar tempo de detecção
+local AirTimeSlider = AntiHackerTab:CreateSlider({
+    Name = "Tempo no Ar (segundos)",
+    Range = {1, 5},
+    Increment = 0.5,
+    CurrentValue = 3,
+    Flag = "AirTimeThreshold",
+    Callback = function(Value)
+        airTimeThreshold = Value
+        Rayfield:Notify({
+            Title = "Configuração Atualizada",
+            Content = "Tempo de detecção: " .. Value .. "s",
+            Duration = 2,
+            Image = 4483362458,
+        })
+    end,
+})
+
+local InfoSection = AntiHackerTab:CreateSection("📋 Informações")
+
+local Label = AntiHackerTab:CreateLabel("Sistema detecta jogadores voando por mais de 3s")
+local Label2 = AntiHackerTab:CreateLabel("Pulos normais são ignorados automaticamente")
+local Label3 = AntiHackerTab:CreateLabel("Teleporta e usa a 3ª Tool do inventário")
+
+-- ====================================
+-- ANTI-HACKER V1 - DETECÇÃO DE SPEED
+-- ====================================
+
+local SpeedSection = AntiHackerTab:CreateSection("Detecção de Speed Hack")
+
+local AntiHackerToggle = AntiHackerTab:CreateToggle({
+    Name = "Anti-Hacker System (Speed)",
+    CurrentValue = false,
+    Flag = "AntiHackerToggle",
+    Callback = function(Value)
+        antiHackerEnabled = Value
+        
+        if Value then
+            connection = RunService.Heartbeat:Connect(function()
+                if not antiHackerEnabled then return end
+                
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
+                        local humanoid = player.Character.Humanoid
+                        local humanoidRootPart = player.Character.HumanoidRootPart
+                        
+                        if humanoid.WalkSpeed > maxNormalSpeed or humanoidRootPart.AssemblyLinearVelocity.Magnitude > maxNormalSpeed then
+                            Rayfield:Notify({
+                                Title = "Hacker Detected",
+                                Content = player.Name .. " is speed hacking!",
+                                Duration = 3,
+                                Image = 4483362458,
+                            })
+                        end
+                    end
+                end
+            end)
+        else
+            if connection then
+                connection:Disconnect()
+                connection = nil
+            end
+        end
+    end,
+})
+
+-- ====================================
+-- EVENT CONNECTIONS
+-- ====================================
+
+-- Quando um novo jogador entra
 Players.PlayerAdded:Connect(function(player)
+    -- Adicionar à tabela de tempo no ar
+    if autoKnifeEnabled then
+        playerAirTime[player.UserId] = 0
+    end
+    
+    -- Criar hitbox se estiver ativado
     if hitboxEnabled and player ~= LocalPlayer then
         player.CharacterAdded:Connect(function()
             wait(1)
@@ -1060,10 +1311,18 @@ Players.PlayerAdded:Connect(function(player)
     end
 end)
 
+-- Quando um jogador sai
 Players.PlayerRemoving:Connect(function(player)
     removeHitbox(player)
+    removeESP(player)
+    
+    -- Remover da tabela de tempo no ar
+    if playerAirTime[player.UserId] then
+        playerAirTime[player.UserId] = nil
+    end
 end)
 
+-- Para todos os jogadores já existentes
 for _, player in pairs(Players:GetPlayers()) do
     if player ~= LocalPlayer then
         player.CharacterAdded:Connect(function()
@@ -1071,10 +1330,14 @@ for _, player in pairs(Players:GetPlayers()) do
             if hitboxEnabled then
                 createHitbox(player)
             end
+            if ESPEnabled then
+                createESP(player)
+            end
         end)
     end
 end
 
+-- Quando o personagem local respawna
 LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     Character = newCharacter
     Humanoid = Character:WaitForChild("Humanoid")
@@ -1083,7 +1346,24 @@ LocalPlayer.CharacterAdded:Connect(function(newCharacter)
     if speedEnabled then
         Humanoid.WalkSpeed = playerSpeed
     end
+    
+    -- Atualizar câmera
+    Camera = Workspace.CurrentCamera
 end)
+
+-- Limpar quando o personagem for removido
+LocalPlayer.CharacterRemoving:Connect(function()
+    if flyConnection then
+        flyConnection:Disconnect()
+    end
+    if connection then
+        connection:Disconnect()
+    end
+end)
+
+-- ====================================
+-- NOTIFICAÇÃO FINAL
+-- ====================================
 
 Rayfield:Notify({
     Title = "System Loaded",
@@ -1092,4 +1372,17 @@ Rayfield:Notify({
     Image = 4483362458,
 })
 
-print("Bridge Hub MM2 - Parte 3 completa! Script totalmente carregado!")
+print("Bridge Hub MM2 - Parte 4 completa!")
+print("Script totalmente carregado e funcional!")
+print("Criado por darker9899")
+print("===========================================")
+print("✅ Anti-Hacker V2 (Detecção de Voo)")
+print("✅ Anti-Hacker V1 (Speed Detection)")
+print("✅ ESP System")
+print("✅ Aimbot + FOV")
+print("✅ Hitbox Expander")
+print("✅ Auto Knife & Auto Kill")
+print("✅ Speed Hack")
+print("✅ Team Detector")
+print("===========================================")
+print("Todas as funcionalidades estão ativas!")
