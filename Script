@@ -995,10 +995,10 @@ local AutoKillToggle = KnifeTab:CreateToggle({
                         if currentTool then
                             local originalPos = targetPlayer.Character.HumanoidRootPart.CFrame
                             local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-                            local pullPos = myPos + (Camera.CFrame.LookVector * 8)
+                            local pullPos = myPos + (Camera.CFrame.LookVector * 2)
                             
                             pullPlayerToPosition(targetPlayer, pullPos)
-                            wait(0.2)
+                            wait(0.5)
                             targetPlayer.Character.HumanoidRootPart.CFrame = originalPos
                         end
                     end
