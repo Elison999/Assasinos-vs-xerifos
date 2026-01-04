@@ -285,6 +285,9 @@ local Window = Rayfield:CreateWindow({
 
 -- Criar Tabs
 local MainTab = Window:CreateTab("Main", 4483362458)
+local HitboxTab = Window:CreateTab("Hitbox", 4483362458)
+local TeamTab = Window:CreateTab("Anti enemys + team check", 4483362458)
+local AntiHackerTab = Window:CreateTab("🛡️ Anti Hacker V2", 4483362458)
 local PlayerTab = Window:CreateTab("Player", 4483362458)
 local KnifeTab = Window:CreateTab("Knife", 4483362458)
 
