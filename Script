@@ -906,7 +906,25 @@ local SpeedSlider = PlayerTab:CreateSlider({
 })
 
 -- ====================================
--- KNIFE TAB - TOGGLES
+-- KNIFE TAB - VARIÁVEIS & SLIDERS
+-- ====================================
+
+local KnifeRange = 7 -- Valor padrão inicial
+
+local KnifeRangeSlider = KnifeTab:CreateSlider({
+    Name = "Knife Range / Pull Distance",
+    Range = {5, 60}, -- De 5 a 60 studs de distância
+    Increment = 1,
+    Suffix = " studs",
+    CurrentValue = 7,
+    Flag = "KnifeRange",
+    Callback = function(Value)
+        KnifeRange = Value
+    end,
+})
+
+-- ====================================
+-- KNIFE TAB - TOGGLES ATUALIZADOS
 -- ====================================
 
 local AutoKnifeToggle = KnifeTab:CreateToggle({
@@ -920,15 +938,21 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
             espConnections.AutoKnifeLoop = RunService.Heartbeat:Connect(function()
                 if autoKnifeEnabled then
                     local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+                    
+                    -- Verifica se tem tool e personagem vivo
                     if currentTool and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
                         for _, player in pairs(Players:GetPlayers()) do
                             if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                                
+                                -- Lógica de Puxar (Teleporte do inimigo para frente do LocalPlayer)
                                 local myPos = LocalPlayer.Character.HumanoidRootPart.Position
                                 local lookVector = LocalPlayer.Character.HumanoidRootPart.CFrame.LookVector
-                                local pullPos = myPos + (lookVector * 7)
+                                
+                                -- USA A VARIÁVEL DO SLIDER AQUI (KnifeRange)
+                                local pullPos = myPos + (lookVector * KnifeRange) 
                                 pullPlayerToPosition(player, pullPos)
                                 
-                                -- Aumentar hitbox para 8
+                                -- Hitbox dinâmica baseada no alcance
                                 if player.Character:FindFirstChild("HumanoidRootPart") then
                                     local hrp = player.Character.HumanoidRootPart
                                     if not hrp:FindFirstChild("AutoKnifeHitbox") then
@@ -937,7 +961,11 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                                         tempHitbox.Anchored = true
                                         tempHitbox.CanCollide = false
                                         tempHitbox.Transparency = 0.7
-                                        tempHitbox.Size = Vector3.new(8, 8, 8)
+                                        
+                                        -- O tamanho da hitbox acompanha o range (um pouco maior para garantir o hit)
+                                        local boxSize = math.clamp(KnifeRange + 2, 5, 20) 
+                                        tempHitbox.Size = Vector3.new(boxSize, boxSize, boxSize)
+                                        
                                         tempHitbox.Shape = Enum.PartType.Ball
                                         tempHitbox.BrickColor = BrickColor.new("Really red")
                                         tempHitbox.Material = Enum.Material.ForceField
@@ -956,7 +984,10 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                                     end
                                 end
                                 
-                                wait(0.2)
+                                -- Ativa a faca automaticamente se estiver perto
+                                if (player.Character.HumanoidRootPart.Position - myPos).Magnitude <= KnifeRange + 5 then
+                                    currentTool:Activate()
+                                end
                             end
                         end
                     end
@@ -968,7 +999,7 @@ local AutoKnifeToggle = KnifeTab:CreateToggle({
                 espConnections.AutoKnifeLoop = nil
             end
             
-            -- Remover todas as hitboxes temporárias
+            -- Remover todas as hitboxes temporárias ao desligar
             for _, obj in pairs(workspace:GetChildren()) do
                 if obj.Name == "AutoKnifeHitbox" then
                     obj:Destroy()
@@ -990,16 +1021,21 @@ local AutoKillToggle = KnifeTab:CreateToggle({
                 if gameProcessed then return end
                 
                 if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                    -- Verifica se tem um alvo no FOV (definido pelo script de Aimbot)
                     if autoKillEnabled and targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
                         local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
                         if currentTool then
                             local originalPos = targetPlayer.Character.HumanoidRootPart.CFrame
                             local myPos = LocalPlayer.Character.HumanoidRootPart.Position
-                            local pullPos = myPos + (Camera.CFrame.LookVector * 2)
+                            
+                            -- Puxa baseado na distância do slider, mas invertido (traz para perto)
+                            -- Aqui usamos um valor fixo pequeno para matar instantâneo ou o Range se preferir manter distância
+                            local pullPos = myPos + (Camera.CFrame.LookVector * 3) -- Puxa bem perto para garantir o clique
                             
                             pullPlayerToPosition(targetPlayer, pullPos)
-                            wait(0.5)
-                            targetPlayer.Character.HumanoidRootPart.CFrame = originalPos
+                            currentTool:Activate() -- Ativa a faca
+                            wait(0.1) 
+                            targetPlayer.Character.HumanoidRootPart.CFrame = originalPos -- Devolve o player (efeito ghost)
                         end
                     end
                 end
